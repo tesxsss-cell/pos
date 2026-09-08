@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mode Offline &middot; POS Multi-Cabang</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f1f5f9;
+            color: #0f172a;
+            font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+            padding: 24px;
+        }
+        .kartu {
+            max-width: 480px;
+            width: 100%;
+            background: #fff;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            text-align: center;
+        }
+        .lencana {
+            display: inline-block;
+            background: #fef3c7;
+            color: #92400e;
+            border-radius: 999px;
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        h1 { font-size: 20px; margin: 16px 0 8px; }
+        p { color: #475569; font-size: 14px; line-height: 1.6; margin: 0 0 12px; }
+        ul { text-align: left; color: #475569; font-size: 14px; line-height: 1.7; padding-left: 20px; }
+        a.tombol {
+            display: inline-block;
+            margin-top: 16px;
+            background: #0f172a;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 8px;
+            padding: 10px 18px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="kartu">
+        <span class="lencana">Tidak ada koneksi</span>
+        <h1>Halaman ini belum tersimpan untuk mode offline</h1>
+        <p>
+            Jaringan sedang terputus dan halaman yang Anda tuju belum pernah dibuka
+            sebelumnya, jadi belum ada salinan di perangkat ini.
+        </p>
+        <ul>
+            <li>Halaman kasir yang sudah pernah dibuka tetap dapat digunakan.</li>
+            <li>Transaksi yang dibuat saat offline masuk ke antrian di perangkat.</li>
+            <li>Antrian terkirim otomatis begitu jaringan kembali tersambung.</li>
+        </ul>
+        <a class="tombol" href="/kasir">Buka halaman kasir</a>
+    </div>
+</body>
+</html>
