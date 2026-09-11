@@ -5,7 +5,7 @@
 @section('content')
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-            <h1 class="text-lg font-semibold text-slate-900">Daftarx Produk &middot; {{ $branch?->name ?? 'Cabang Anda' }}</h1>
+            <h1 class="text-lg font-semibold text-slate-900">Daftarx2 Produk &middot; {{ $branch?->name ?? 'Cabang Anda' }}</h1>
             <p class="text-xs text-slate-500">Barang yang tersedia di cabang Anda. Daftarkan atau ganti barcode langsung dari sini.</p>
         </div>
         <a href="{{ route('pos.index') }}" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">Ke Kasir</a>
