@@ -7,7 +7,7 @@
 
     <form method="GET" class="mb-6 flex flex-wrap items-end gap-3 rounded-xl bg-white p-4 shadow">
         <div>
-            <label class="block text-xs font-medium text-slate-500">Dari tanggal</label>
+            <label class="block text-xs font-medium text-slate-500">Darikan tanggalx2</label>
             <input type="date" name="dari" value="{{ $from }}" class="mt-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm">
         </div>
         <div>
