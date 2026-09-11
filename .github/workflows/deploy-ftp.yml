@@ -1,48 +1,97 @@
-name: Deployy via FTP ke Namecheap
+name: Deploy Incremental via FTPS ke Namecheap
 
-# Otomatis setiap push ke main; bisa juga dijalankan manual dari tab "Actions".
+# Jalan otomatis saat ada push ke main, atau jalankan manual dari tab Actions.
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
+# Cegah dua deploy menulis ke folder production secara bersamaan.
 concurrency:
-  group: deploy-ftp-produksi
+  group: deploy-pos-production
   cancel-in-progress: true
 
 jobs:
   deploy:
-    name: Build di GitHub lalu upload via FTP
+    name: Sinkronkan file yang berubah saja
     runs-on: ubuntu-latest
+
     steps:
-      - name: Ambil kode
+      - name: Ambil source terbaru dari GitHub
         uses: actions/checkout@v4
 
-
-      - name: Upload ke hosting via FTP
+      # File .ftp-deploy-sync-state.json disimpan di server.
+      # Setelah satu deploy berhasil, hanya file baru/berubah yang akan diupload.
+      - name: Upload perubahan via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.FTP_SERVER }}       # mis. ftp.domainanda.com atau hostname/IP server
-          username: ${{ secrets.FTP_USERNAME }}   # akun utama atau akun FTP khusus
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps                          # coba ftps dulu. Jika gagal handshake, ganti ke ftp
+          protocol: ftps
           port: 21
+          timeout: 300000
+          log-level: standard
+
+          # Akun FTP khusus harus memiliki root:
+          # /home/clouyogf/public_html/pos
           local-dir: ./
           server-dir: ./
-          # File/folder yang TIDAK ikut diupload:
+          dangerous-clean-slate: false
+          state-name: .ftp-deploy-sync-state.json
+
+          # Pola .gitignore proyek + file runtime yang tidak boleh ditimpa.
+          # Jangan masukkan .ftp-deploy-sync-state.json ke daftar ini.
           exclude: |
             **/.git*
             **/.git*/**
             **/.github/**
+
+            *.log
+            **/*.log
+            .DS_Store
+            **/.DS_Store
+            .env
+            .env.backup
+            .env.production
+            .phpactor.json
+            .phpunit.result.cache
+            .codex/**
+            .cursor/**
+            .idea/**
+            .nova/**
+            .phpunit.cache/**
+            .vscode/**
+            .zed/**
+            auth.json
+
+            node_modules/**
             **/node_modules/**
             vendor/**
             **/vendor/**
-            .env
-            .env.*
-            bootstrap/cache/**
+            _ide_helper.php
+            **/_ide_helper.php
+
+            public/build/**
+            public/fonts-manifest.dev.json
+            public/hot
+            public/hot/**
+            public/storage
+            public/storage/**
+
+            storage/*.key
+            storage/pail/**
             storage/logs/**
             storage/framework/cache/**
             storage/framework/sessions/**
             storage/framework/views/**
             storage/app/**
+
+            bootstrap/cache/**
+            Homestead.json
+            **/Homestead.json
+            Homestead.yaml
+            **/Homestead.yaml
+            Thumbs.db
+            **/Thumbs.db
             tests/**
