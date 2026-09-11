@@ -1,4 +1,4 @@
-name: Deploy via FTP ke Namecheap
+name: Deploy2 via FTP ke Namecheap
 
 # Otomatis setiap push ke main; bisa juga dijalankan manual dari tab "Actions".
 on:
@@ -41,16 +41,25 @@ jobs:
           npm ci
           npm run build
 
-      - name: Upload ke hosting via FTP
+       - name: Upload ke hosting via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.FTP_SERVER }}       # mis. ftp.domainanda.com atau hostname/IP server
-          username: ${{ secrets.FTP_USERNAME }}   # akun utama atau akun FTP khusus
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps                          # coba ftps dulu. Jika gagal handshake, ganti ke ftp
+
+          protocol: ftps
           port: 21
+
+          # Memberi waktu lebih panjang untuk operasi FTP besar.
+          timeout: 300000
+
+          # Agar log berikutnya menampilkan penyebab detail sebelum koneksi ditutup.
+          log-level: verbose
+
           local-dir: ./
           server-dir: ./
+
           # File/folder yang TIDAK ikut diupload:
           exclude: |
             **/.git*
