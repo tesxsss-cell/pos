@@ -36,8 +36,9 @@
         'code_39', 'code_93', 'itf', 'codabar', 'qr_code', 'data_matrix',
     ];
     var FORMAT_RITEL = ['ean_13', 'ean_8', 'upc_a', 'upc_e'];
-    var KONFIRMASI = 2;         // jumlah pembacaan sama berturut-turut sebelum diterima
-    var JEDA_ULANG = 2000;      // ms: cegah kode sama terbaca berkali-kali
+    var KONFIRMASI = 2;         // minimal 2 pembacaan identik sebelum diterima
+    var UKURAN_BUFFER = 6;       // toleran terhadap satu frame buram/keliru di antaranya
+    var JEDA_ULANG = 2500;      // ms: cegah kode sama terbaca berkali-kali
     var GAYA_TERPASANG = false;
 
     var overlayAktif = null;    // { lapisan, kontrol }
@@ -199,7 +200,7 @@
         var sibukDetektor = false, sibukOffline = false;
         var kanvas = document.createElement('canvas');
         var kctx = kanvas.getContext('2d', { willReadFrequently: true });
-        var kodeTerakhir = '', waktuTerakhir = 0, kodeSebelum = '', hitungSama = 0;
+        var kodeTerakhir = '', waktuTerakhir = 0, bufferKode = [];
 
         function lapor(teks) { if (typeof setStatus === 'function') { setStatus(teks); } }
 
@@ -208,10 +209,12 @@
             if (! kode) { return; }
             var sekarang = Date.now();
             if (kode === kodeTerakhir && (sekarang - waktuTerakhir) < JEDA_ULANG) { return; }
-            if (kode === kodeSebelum) { hitungSama += 1; } else { kodeSebelum = kode; hitungSama = 1; }
-            if (hitungSama < KONFIRMASI) { return; }
-            if (! cekDigitEANUPC(kode)) { hitungSama = 0; kodeSebelum = ''; return; }
-            kodeTerakhir = kode; waktuTerakhir = sekarang; hitungSama = 0; kodeSebelum = '';
+            bufferKode.push(kode);
+            if (bufferKode.length > UKURAN_BUFFER) { bufferKode.shift(); }
+            var jumlahSama = bufferKode.filter(function (satu) { return satu === kode; }).length;
+            if (jumlahSama < KONFIRMASI) { return; }
+            if (! cekDigitEANUPC(kode)) { bufferKode = []; return; }
+            kodeTerakhir = kode; waktuTerakhir = sekarang; bufferKode = [];
             bunyikanBeep(true);
             getar(50);
             try { onKode(kode, format || ''); } catch (galat) { /* abaikan */ }
@@ -228,15 +231,17 @@
                     var f = FORMAT_DIINGINKAN.filter(function (x) { return didukungList.indexOf(x) !== -1; });
                     detector = buat(f.length ? f : null);
                     var adaRitel = FORMAT_RITEL.some(function (x) { return didukungList.indexOf(x) !== -1; });
-                    pakaiOffline = !! window.OfflineBarcode && (! detector || ! adaRitel);
+                    // Jalankan dekoder lokal juga untuk EAN/UPC. Dua mesin yang bekerja
+                    // paralel membuat pemindaian tetap akurat tanpa bergantung internet.
+                    pakaiOffline = !! window.OfflineBarcode;
                 }).catch(function () {
                     detector = buat(null);
-                    pakaiOffline = !! window.OfflineBarcode && ! detector;
+                    pakaiOffline = !! window.OfflineBarcode;
                 });
             }
             if (adaDetector) {
                 detector = buat(null);
-                pakaiOffline = !! window.OfflineBarcode && ! detector;
+                pakaiOffline = !! window.OfflineBarcode;
                 return Promise.resolve();
             }
             detector = null;
@@ -287,7 +292,11 @@
             lapor('Menyiapkan kamera\u2026');
             var pilihan = deviceId
                 ? { deviceId: { exact: deviceId } }
-                : { facingMode: { ideal: 'environment' } };
+                : {
+                    facingMode: { ideal: 'environment' },
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 },
+                };
             function mintaKamera(v) { return navigator.mediaDevices.getUserMedia({ audio: false, video: v }); }
             return mintaKamera(pilihan).catch(function (galatAwal) {
                 // Fallback supaya kotak pemindai tidak gagal muncul akibat kamera/deviceId
@@ -303,6 +312,16 @@
             }).then(function (s) {
                 stream = s;
                 track = s.getVideoTracks()[0] || null;
+                // Minta fokus kontinu bila kamera mendukungnya. Kegagalan constraint
+                // tidak menghentikan scanner karena dukungan berbeda tiap perangkat.
+                if (track && track.getCapabilities && track.applyConstraints) {
+                    try {
+                        var kemampuan = track.getCapabilities();
+                        if (kemampuan.focusMode && kemampuan.focusMode.indexOf('continuous') !== -1) {
+                            track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(function () {});
+                        }
+                    } catch (galatFokus) { /* abaikan */ }
+                }
                 video.setAttribute('playsinline', 'true');
                 video.muted = true;
                 video.srcObject = s;
@@ -333,7 +352,7 @@
             }
             track = null; detector = null;
             try { video.pause(); video.srcObject = null; } catch (galat) { /* abaikan */ }
-            kodeSebelum = ''; hitungSama = 0;
+            bufferKode = [];
         }
 
         function bisaSenter() {
