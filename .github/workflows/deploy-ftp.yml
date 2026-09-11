@@ -1,0 +1,72 @@
+name: Deploy via FTP ke Namecheap
+
+# Otomatis setiap push ke main; bisa juga dijalankan manual dari tab "Actions".
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-ftp-produksi
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build di GitHub lalu upload via FTP
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ambil kode
+        uses: actions/checkout@v4
+
+      # Server FTP tidak bisa menjalankan composer/artisan/npm,
+      # jadi SEMUA di-build di sini dulu lalu diupload.
+      - name: Siapkan .env sementara untuk proses build
+        run: cp .env.example .env
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'   # SAMAKAN dengan versi PHP di hosting (cPanel > MultiPHP Manager)
+
+      - name: Composer install (mode produksi)
+        run: composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Build asset Tailwind/Vite
+        run: |
+          npm ci
+          npm run build
+
+      - name: Upload ke hosting via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}       # mis. ftp.domainanda.com atau hostname/IP server
+          username: ${{ secrets.FTP_USERNAME }}   # akun utama: clouyogf  ATAU akun khusus: pos@domainanda.com
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps        # coba ftps dulu (aman). Kalau gagal handshake, ganti jadi: ftp
+          port: 21
+          local-dir: ./
+          # Path project Anda: /home/clouyogf/public_html/pos
+          #  - Kalau pakai akun FTP UTAMA (home = /home/clouyogf/)       -> server-dir: public_html/pos/
+          #  - Kalau pakai akun FTP KHUSUS yg diarahkan ke folder pos     -> server-dir: ./
+          server-dir: ./
+          # File/folder yang TIDAK ikut diupload (biar .env & data server aman):
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            **/node_modules/**
+            .env
+            .env.*
+            bootstrap/cache/**
+            storage/logs/**
+            storage/framework/cache/**
+            storage/framework/sessions/**
+            storage/framework/views/**
+            storage/app/**
+            tests/**
