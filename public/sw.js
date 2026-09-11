@@ -5,25 +5,44 @@
  *  - Menyimpan kerangka aplikasi (app shell) agar halaman kasir tetap terbuka
  *    saat jaringan mati.
  *  - Menyajikan aset statis dari cache lebih dulu (stale-while-revalidate).
+ *  - Menyimpan dekoder barcode offline (EAN/UPC) supaya scan tetap jalan offline.
  *  - Tidak pernah menyimpan permintaan POST/PUT/DELETE, sehingga transaksi
  *    selalu ditangani antrian IndexedDB di pos-offline.js.
+ *
+ * Catatan versi:
+ *  pos-v6 = pemindai kamera selalu minta izin kamera + fallback kamera + pop up scan responsif mobile.
+ *  pos-v5 = pemindai kamera TANPA html5-qrcode (dekoder offline EAN/UPC + BarcodeDetector).
+ *  Nomor versi WAJIB dinaikkan setiap kali berkas js/ di atas berubah, supaya
+ *  kasir tidak memakai berkas lama yang masih tersimpan di cache peramban.
  */
-const VERSI = 'pos-v1';
+const VERSI = 'pos-v6';
 const CACHE_SHELL = `${VERSI}-shell`;
 const CACHE_ASET = `${VERSI}-aset`;
 
 const BERKAS_INTI = [
     '/offline.html',
+    '/js/offline-barcode.js',
     '/js/pos-offline.js',
     '/js/barcode-scanner.js',
     '/manifest.webmanifest',
 ];
 
+// Berkas tambahan yang boleh gagal saat dipasang ke cache.
+const BERKAS_OPSIONAL = [];
+
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches
             .open(CACHE_SHELL)
-            .then((cache) => cache.addAll(BERKAS_INTI))
+            .then((cache) =>
+                cache.addAll(BERKAS_INTI).then(() =>
+                    Promise.all(
+                        BERKAS_OPSIONAL.map((berkas) =>
+                            cache.add(berkas).catch(() => null)
+                        )
+                    )
+                )
+            )
             .then(() => self.skipWaiting())
     );
 });
@@ -78,6 +97,13 @@ function layaniHalaman(request) {
         );
 }
 
+/** Endpoint data kasir yang jawabannya harus selalu segar (tidak boleh dari cache). */
+const JALUR_LANGSUNG = [
+    '/kasir/katalog-offline',
+    '/kasir/cari-produk',
+    '/kasir/barcode',           // cek barcode & rekomendasi nama barang
+];
+
 self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
@@ -87,8 +113,8 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Endpoint sinkronisasi & pencarian produk harus selalu ke jaringan.
-    if (url.pathname.includes('/kasir/katalog-offline') || url.pathname.includes('/kasir/cari-produk')) {
+    // Endpoint sinkronisasi, pencarian produk, & pemindaian barcode selalu ke jaringan.
+    if (JALUR_LANGSUNG.some((jalur) => url.pathname.includes(jalur))) {
         return;
     }
 

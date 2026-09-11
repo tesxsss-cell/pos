@@ -37,6 +37,12 @@ class Product extends Model
         return $this->hasMany(Stock::class);
     }
 
+    /** HF-04: daftar barcode yang didaftarkan kasir (satu barang boleh banyak barcode). */
+    public function barcodes(): HasMany
+    {
+        return $this->hasMany(ProductBarcode::class);
+    }
+
     public function inventoryLayers(): HasMany
     {
         return $this->hasMany(InventoryLayer::class);
@@ -52,13 +58,20 @@ class Product extends Model
         return $query->where('is_active', true);
     }
 
-    /** Pencarian kasir: nama, SKU, atau hasil pemindaian barcode/QR. */
+    /** Pencarian kasir: nama, SKU, barcode utama, atau barcode hasil pendaftaran kasir. */
     public function scopeSearch(Builder $query, ?string $term): Builder
     {
-        return $query->when($term, fn (Builder $q) => $q->where(function (Builder $q) use ($term) {
+        $code = ProductBarcode::normalize($term);
+
+        return $query->when($term, fn (Builder $q) => $q->where(function (Builder $q) use ($term, $code) {
             $q->where('name', 'like', "%{$term}%")
                 ->orWhere('sku', 'like', "%{$term}%")
                 ->orWhere('barcode', $term);
+
+            if ($code !== '') {
+                $q->orWhere('barcode', $code)
+                    ->orWhereHas('barcodes', fn (Builder $b) => $b->where('barcode', $code));
+            }
         }));
     }
 

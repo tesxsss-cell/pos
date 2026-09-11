@@ -36,6 +36,7 @@
 
                 @if ($me->hasRole('kasir', 'admin', 'manager_cabang'))
                     <a class="{{ $link }}" href="{{ route('pos.index') }}">Kasir</a>
+                    <a class="{{ $link }}" href="{{ route('pos.products') }}">Daftar Produk</a>
                 @endif
 
                 @if ($me->isCentral())

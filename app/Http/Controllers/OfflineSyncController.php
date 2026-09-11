@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exceptions\InsufficientStockException;
 use App\Models\Product;
 use App\Models\Sale;
+use App\Services\BarcodeService;
 use App\Services\SaleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,37 +16,33 @@ use Throwable;
 /**
  * Mendukung mode offline halaman kasir.
  *
- * - catalog(): mengirim katalog + stok agar bisa disimpan di IndexedDB peramban.
- * - store():   menerima antrian transaksi yang dibuat saat jaringan mati.
+ * - catalog():      mengirim katalog + stok + daftar barcode agar bisa disimpan di IndexedDB.
+ * - store():        menerima antrian transaksi yang dibuat saat jaringan mati.
+ * - storeBarcodes():menerima antrian pendaftaran barcode yang dibuat saat jaringan mati.
  */
 class OfflineSyncController extends Controller
 {
-    public function __construct(private readonly SaleService $sales)
-    {
+    public function __construct(
+        private readonly SaleService $sales,
+        private readonly BarcodeService $barcodes,
+    ) {
     }
 
     /**
      * Katalog ringan untuk disimpan di peramban kasir.
+     * Setiap barang membawa daftar barcode beserta harga & jumlah bawaannya,
+     * sehingga pemindaian tetap berjalan walau jaringan mati.
      */
     public function catalog(Request $request): JsonResponse
     {
         $user = $request->user();
         $branchId = $user->scopedBranchId() ?? (int) $request->integer('cabang');
 
-        $products = Product::query()
+        $products = $this->barcodes->productQuery($branchId)
             ->active()
-            ->with(['stocks' => fn ($query) => $query->where('branch_id', $branchId)])
             ->orderBy('name')
             ->get()
-            ->map(fn (Product $product) => [
-                'id' => $product->id,
-                'sku' => $product->sku,
-                'barcode' => $product->barcode,
-                'name' => $product->name,
-                'unit' => $product->unit,
-                'sell_price' => (float) $product->sell_price,
-                'stock' => (int) ($product->stocks->first()->quantity ?? 0),
-            ]);
+            ->map(fn (Product $product) => $this->barcodes->present($product, $branchId));
 
         return response()->json([
             'branch_id' => $branchId,
@@ -150,6 +147,64 @@ class OfflineSyncController extends Controller
 
         return response()->json([
             'message' => 'Sinkronisasi selesai.',
+            'results' => $hasil,
+        ]);
+    }
+
+    /**
+     * HF-04: pendaftaran barcode yang dibuat kasir saat jaringan mati.
+     * Barcode disimpan lokal lebih dahulu, lalu dikirim ke server di sini.
+     */
+    public function storeBarcodes(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'barcodes' => ['required', 'array', 'min:1', 'max:50'],
+            'barcodes.*.client_uuid' => ['required', 'string', 'max:36'],
+            'barcodes.*.barcode' => ['required', 'string', 'max:80'],
+            'barcodes.*.product_id' => ['nullable', 'integer', 'exists:products,id'],
+            'barcodes.*.name' => ['nullable', 'string', 'max:150'],
+            'barcodes.*.sell_price' => ['nullable', 'numeric', 'min:0'],
+            'barcodes.*.quantity' => ['nullable', 'integer', 'min:1', 'max:10000'],
+            'barcodes.*.replace' => ['nullable', 'boolean'],
+        ]);
+
+        $user = $request->user();
+        $hasil = [];
+
+        foreach ($data['barcodes'] as $offline) {
+            try {
+                $barcode = $this->barcodes->register([
+                    'barcode' => $offline['barcode'],
+                    'product_id' => $offline['product_id'] ?? null,
+                    'name' => $offline['name'] ?? null,
+                    'sell_price' => $offline['sell_price'] ?? null,
+                    'default_quantity' => $offline['quantity'] ?? 1,
+                    'update_product_price' => false,   // harga master tidak diubah lewat jalur offline
+                    'replace' => (bool) ($offline['replace'] ?? false),
+                ], $user);
+
+                $hasil[] = [
+                    'client_uuid' => $offline['client_uuid'],
+                    'status' => 'tersimpan',
+                    'barcode' => $barcode->barcode,
+                    'product_id' => $barcode->product_id,
+                ];
+            } catch (Throwable $e) {
+                Log::warning('Gagal sinkronisasi pendaftaran barcode', [
+                    'client_uuid' => $offline['client_uuid'],
+                    'error' => $e->getMessage(),
+                ]);
+
+                $hasil[] = [
+                    'client_uuid' => $offline['client_uuid'],
+                    'status' => 'gagal',
+                    'message' => $e->getMessage(),
+                ];
+            }
+        }
+
+        return response()->json([
+            'message' => 'Sinkronisasi barcode selesai.',
             'results' => $hasil,
         ]);
     }

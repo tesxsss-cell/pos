@@ -30,6 +30,7 @@ Route::middleware('auth')->group(function () {
     // ---------- HF-04 Transaksi Penjualan (POS) ----------
     Route::middleware('role:kasir,admin,manager_cabang')->prefix('kasir')->name('pos.')->group(function () {
         Route::get('/', [PosController::class, 'index'])->name('index');
+        Route::get('produk', [PosController::class, 'products'])->name('products');         // daftar produk cabang + daftar/ganti barcode
         Route::get('cari-produk', [PosController::class, 'lookup'])->name('lookup');       // scan barcode/QR & pencarian
         Route::post('checkout', [PosController::class, 'checkout'])->name('checkout');
         Route::get('struk/{sale}', [PosController::class, 'receipt'])->name('receipt');
@@ -37,9 +38,16 @@ Route::middleware('auth')->group(function () {
         Route::post('shift/buka', [PosController::class, 'openShift'])->name('shift.open');
         Route::post('shift/tutup', [PosController::class, 'closeShift'])->name('shift.close');
 
+        // HF-04 Scan & pendaftaran barcode barang langsung dari halaman kasir
+        Route::get('barcode', [PosController::class, 'resolveBarcode'])->name('barcode.resolve');
+        Route::get('barcode/rekomendasi', [PosController::class, 'suggestProducts'])->name('barcode.suggest');
+        Route::post('barcode', [PosController::class, 'storeBarcode'])->name('barcode.store');
+        Route::delete('barcode/{productBarcode}', [PosController::class, 'destroyBarcode'])->name('barcode.destroy');
+
         // HF-04 Mode offline: unduh katalog & kirim antrian transaksi
         Route::get('katalog-offline', [OfflineSyncController::class, 'catalog'])->name('catalog');
         Route::post('sinkronisasi', [OfflineSyncController::class, 'store'])->name('sync');
+        Route::post('sinkronisasi-barcode', [OfflineSyncController::class, 'storeBarcodes'])->name('sync-barcode');
     });
 
     // ---------- HF-02 Pengelolaan Data Induk ----------

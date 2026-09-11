@@ -20,8 +20,18 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700">Barcode / QR</label>
-                    <input name="barcode" value="{{ old('barcode', $product->barcode) }}"
-                           class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2">
+                    {{-- Tombol pindai langsung bisa diklik (tanpa jalan pintas papan tombol). --}}
+                    <div class="mt-1 flex gap-2">
+                        <input id="barcode" name="barcode" value="{{ old('barcode', $product->barcode) }}"
+                               class="w-full rounded-md border border-slate-300 px-3 py-2">
+                        <button type="button" data-pindai data-pindai-target="#barcode" data-pindai-sekali
+                                class="whitespace-nowrap rounded-md bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+                            Pindai
+                        </button>
+                    </div>
+                    <p class="mt-1 text-xs text-slate-500">
+                        Barcode tambahan (kemasan lain) bisa didaftarkan kasir langsung dari halaman kasir.
+                    </p>
                 </div>
             </div>
 
@@ -75,5 +85,28 @@
                 <a href="{{ route('products.index') }}" class="text-sm text-slate-600 hover:underline">Batal</a>
             </div>
         </form>
+
+        @if ($product->exists && $product->barcodes->isNotEmpty())
+            <div class="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <h2 class="text-sm font-semibold text-slate-800">Barcode terdaftar</h2>
+                <ul class="mt-2 space-y-1 text-xs text-slate-600">
+                    @foreach ($product->barcodes as $barcode)
+                        <li>
+                            {{ $barcode->barcode }} &middot;
+                            @if ($barcode->sell_price === null)
+                                ikut harga master
+                            @else
+                                Rp {{ number_format((float) $barcode->sell_price, 0, ',', '.') }}
+                            @endif
+                            &middot; {{ $barcode->default_quantity }} {{ $product->unit }} per pindai
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
     </div>
+
+    {{-- Modul pemindai kamera offline (tanpa html5-qrcode) dipakai tombol "Pindai" di atas. --}}
+    <script src="{{ asset('js/offline-barcode.js') }}"></script>
+    <script src="{{ asset('js/barcode-scanner.js') }}"></script>
 @endsection
