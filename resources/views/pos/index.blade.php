@@ -26,6 +26,7 @@
 
 
                 
+                
                 <div class="mt-3 flex flex-wrap gap-2">
                     <input id="cari" type="text" autocomplete="off"
                            placeholder="Nama barang, SKU, atau tembak barcode ke sini"
