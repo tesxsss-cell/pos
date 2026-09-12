@@ -10,6 +10,7 @@
  *    selalu ditangani antrian IndexedDB di pos-offline.js.
  *
  * Catatan versi:
+ *  pos-v10 = scanner kasir tertanam tanpa pop-up; kamera dapat diaktifkan/nonaktifkan.
  *  pos-v9 = daftar produk responsif; popup scanner dan tombol barcode tampil di HP.
  *  pos-v8 = scanner halaman daftar/ubah produk juga sudah inline di Blade.
  *  pos-v7 = scanner kasir sudah inline di Blade; cache halaman membawa mesin scan offline.
@@ -18,7 +19,7 @@
  *  Nomor versi WAJIB dinaikkan setiap kali berkas js/ di atas berubah, supaya
  *  kasir tidak memakai berkas lama yang masih tersimpan di cache peramban.
  */
-const VERSI = 'pos-v9';
+const VERSI = 'pos-v10';
 const CACHE_SHELL = `${VERSI}-shell`;
 const CACHE_ASET = `${VERSI}-aset`;
 

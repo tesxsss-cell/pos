@@ -4,145 +4,85 @@
 
 @section('content')
     <div class="grid gap-4 lg:grid-cols-3">
-        {{-- =========== Kolom kiri: pencarian, pemindaian, pendaftaran barcode, keranjang =========== --}}
+        {{-- =========== Kolom kiri: scanner menyatu, pencarian, dan keranjang =========== --}}
         <div class="space-y-4 lg:col-span-2">
-            <div class="rounded-xl bg-white p-4 shadow">
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                        <h1 class="text-lg font-semibold text-slate-900">Kasir &middot; {{ $branch->name }}</h1>
-                        <p class="text-xs text-slate-500">Cari barang, atau langsung pindai barcodenya.</p>
-                    </div>
-                    @if ($shift)
-                        <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
-                            Shift dibuka {{ $shift->opened_at?->format('d/m/Y H:i') }}
-                        </span>
-                    @else
-                        <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
-                            Shift belum dibuka
-                        </span>
-                    @endif
-                </div>
+            <style>
+                /* Scanner kasir menyatu di halaman, tanpa overlay/pop-up dan tanpa animasi. */
+                #scanner-kasir .bcs-kotak {
+                    min-height: 210px;
+                    max-height: 340px;
+                    aspect-ratio: 4 / 3;
+                    border-radius: 10px;
+                }
+                #scanner-kasir .bcs-status,
+                #scanner-kasir .bcs-aksi { display: none; }
+                .kasir-pindai-grid { display: grid; gap: 16px; align-items: start; }
+                #kamera-aktifkan, #kamera-nonaktifkan { min-height: 44px; }
+                @media (min-width: 768px) {
+                    #scanner-kasir .bcs-kotak { min-height: 250px; aspect-ratio: 16 / 9; }
+                }
+                @media (min-width: 1280px) {
+                    .kasir-pindai-grid { grid-template-columns: minmax(0, 1fr) minmax(360px, .95fr); }
+                    #scanner-kasir .bcs-kotak { min-height: 230px; max-height: 300px; }
+                }
+            </style>
+            <div class="rounded-xl bg-white p-3 shadow sm:p-4">
+                <div class="kasir-pindai-grid">
+                    <section class="min-w-0">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                                <h1 class="text-lg font-semibold text-slate-900">Kasir &middot; {{ $branch->name }}</h1>
+                                <p class="text-xs text-slate-500">Pindai barcode terdaftar atau cari barang secara manual.</p>
+                            </div>
+                            @if ($shift)
+                                <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
+                                    Shift dibuka {{ $shift->opened_at?->format('d/m/Y H:i') }}
+                                </span>
+                            @else
+                                <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
+                                    Shift belum dibuka
+                                </span>
+                            @endif
+                        </div>
 
-
-
-
-
-                
-
-
-
-                
-                <div class="mt-3 flex flex-wrap gap-2">
-                    <input id="cari" type="text" autocomplete="off"
-                           placeholder="Nama barang, SKU, atau tembak barcode ke sini"
-                           class="min-w-[220px] flex-1 rounded-md border border-slate-300 px-3 py-2">
-
-                    {{-- Tombol pindai: cukup diklik, tanpa jalan pintas papan tombol apa pun. --}}
-                    <button type="button" id="tombol-pindai"
-                            class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
-                        Pindai barcode
-                    </button>
-
-                    {{-- Tombol pendaftaran barcode barang baru. --}}
-                    <button type="button" id="tombol-daftar"
-                            class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">
-                        Daftarkan barcode
-                    </button>
-                </div>
-
-                <p class="mt-2 text-xs text-slate-400">
-                    Pemindai kamera tanpa animasi (ringan) dan bisa dipakai offline. Semua tombol bisa langsung diklik &mdash; tanpa perlu menekan F2/F3.
-                    Alat pemindai USB juga tetap terbaca walau kolom pencarian belum diklik.
-                    (Jalan pintas F2 &amp; F3 tetap tersedia bila Anda terbiasa memakainya.)
-                </p>
-
-                {{-- Informasi barang hasil pemindaian --}}
-                <div id="info-pindai" class="mt-3 hidden rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800"></div>
-
-                <div id="hasil" class="mt-3 space-y-2"></div>
-            </div>
-
-            {{-- =========== Panel pendaftaran barcode barang =========== --}}
-            <div id="panel-barcode" class="hidden rounded-xl border border-indigo-200 bg-indigo-50/70 p-4 shadow">
-                <div class="flex items-start justify-between gap-2">
-                    <div>
-                        <h2 class="text-base font-semibold text-slate-900">Daftarkan barcode barang</h2>
-                        <p class="text-xs text-slate-600">
-                            Pindai barcode &rarr; ketik nama barang (rekomendasi muncul otomatis) &rarr; isi harga &amp; jumlah &rarr; simpan.
-                            Setelah tersimpan, barcode cukup dipindai saat ada pembeli.
+                        <label for="cari" class="mt-4 block text-xs font-medium text-slate-600">Cari barang / scanner USB</label>
+                        <input id="cari" type="text" autocomplete="off"
+                               placeholder="Nama barang, SKU, atau tembak barcode"
+                               class="mt-1 min-h-11 w-full rounded-md border border-slate-300 px-3 py-2 text-base sm:text-sm">
+                        <p class="mt-2 text-xs leading-relaxed text-slate-400">
+                            Hasil kamera maupun scanner USB langsung diproses dan barang otomatis masuk ke keranjang.
+                            Barcode baru didaftarkan melalui menu Daftar Produk.
                         </p>
-                    </div>
-                    <button type="button" id="bc-batal" class="rounded-md px-2 py-1 text-xs font-semibold text-slate-500 hover:bg-white">Tutup</button>
-                </div>
 
-                <div class="mt-3 grid gap-3 sm:grid-cols-2">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600">Barcode</label>
-                        <div class="mt-1 flex gap-2">
-                            <input id="bc-kode" type="text" autocomplete="off" placeholder="Hasil pindai / ketik manual"
-                                   class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
-                            <button type="button" id="bc-pindai"
-                                    class="whitespace-nowrap rounded-md bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-700">
-                                Pindai
+                        <div id="info-pindai" class="mt-3 hidden rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800"></div>
+                        <div id="hasil" class="mt-3 space-y-2"></div>
+                    </section>
+
+                    <section class="min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-3" aria-labelledby="judul-scanner-kasir">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                                <h2 id="judul-scanner-kasir" class="text-sm font-semibold text-slate-900">Scanner barcode</h2>
+                                <p id="status-scanner-kasir" class="text-xs text-slate-500" aria-live="polite">Menyiapkan kamera…</p>
+                            </div>
+                            <span id="indikator-scanner-kasir" class="rounded-full bg-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-600">Nonaktif</span>
+                        </div>
+
+                        <div id="scanner-kasir" class="mt-3 w-full overflow-hidden rounded-lg bg-black"></div>
+
+                        <div class="mt-3 grid grid-cols-2 gap-2">
+                            <button type="button" id="kamera-aktifkan"
+                                    class="min-h-11 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50">
+                                Aktifkan kamera
+                            </button>
+                            <button type="button" id="kamera-nonaktifkan" disabled
+                                    class="min-h-11 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50">
+                                Nonaktifkan
                             </button>
                         </div>
-                    </div>
-
-                    <div class="relative">
-                        <label class="block text-xs font-medium text-slate-600">Nama barang</label>
-                        <input id="bc-nama" type="text" autocomplete="off" placeholder="Ketik nama barang, mis. Minyak goreng"
-                               class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
-                        <div id="bc-saran" class="absolute left-0 right-0 z-20 mt-1 hidden max-h-56 overflow-auto rounded-md border border-slate-200 bg-white shadow-lg"></div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600">Harga jual (Rp)</label>
-                        <input id="bc-harga" type="number" min="0" step="0.01"
-                               class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
-                        <p class="mt-1 text-[11px] text-slate-500">
-                            Biarkan sama dengan harga barang bila harga tidak berubah &mdash; harga otomatis mengikuti harga master.
+                        <p class="mt-2 text-[11px] leading-relaxed text-slate-400">
+                            Kamera mencoba aktif otomatis. Di HP gunakan HTTPS dan izinkan kamera belakang.
                         </p>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600">Jumlah saat dipindai</label>
-                        <input id="bc-jumlah" type="number" min="1" step="1" value="1"
-                               class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
-                        <p class="mt-1 text-[11px] text-slate-500">Jumlah ini tetap bisa diubah di keranjang saat penjualan.</p>
-                    </div>
-                </div>
-
-                <div id="bc-terpilih" class="mt-3 hidden rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"></div>
-                <div id="bc-daftar" class="mt-2 hidden text-xs text-slate-600"></div>
-
-                <div class="mt-3 space-y-1">
-                    <label class="flex items-center gap-2 text-xs text-slate-700">
-                        <input type="checkbox" id="bc-ke-keranjang" class="rounded border-slate-300">
-                        Langsung masukkan ke keranjang setelah disimpan
-                    </label>
-                    @if ($canUpdatePrice)
-                        <label class="flex items-center gap-2 text-xs text-slate-700">
-                            <input type="checkbox" id="bc-master" class="rounded border-slate-300">
-                            Perbarui juga harga master barang ini
-                        </label>
-                    @endif
-                    <label class="flex items-center gap-2 text-xs text-slate-700">
-                        <input type="checkbox" id="bc-pindah" class="rounded border-slate-300">
-                        Pindahkan barcode bila sudah dipakai barang lain
-                    </label>
-                </div>
-
-                <p id="bc-pesan" class="mt-2 text-xs"></p>
-
-                <div class="mt-3 flex flex-wrap gap-2">
-                    <button type="button" id="bc-simpan"
-                            class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
-                        Simpan barcode
-                    </button>
-                    <button type="button" id="bc-bersih"
-                            class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
-                        Kosongkan
-                    </button>
+                    </section>
                 </div>
             </div>
 
@@ -1301,17 +1241,11 @@
             var rute = {
                 cari: '{{ route('pos.lookup') }}',
                 checkout: '{{ route('pos.checkout') }}',
-                barcodeCek: '{{ route('pos.barcode.resolve') }}',
-                barcodeSaran: '{{ route('pos.barcode.suggest') }}',
-                barcodeSimpan: '{{ route('pos.barcode.store') }}',
-                barcodeHapus: '{{ url('kasir/barcode') }}',
             };
             var csrf = '{{ csrf_token() }}';
-            var bolehUbahMaster = @json($canUpdatePrice);
 
             var keranjang = [];
-            var produkBarcode = null;   // barang terpilih pada panel pendaftaran
-            var jedaSaran = null;
+            var kontrolScannerKasir = null;
 
             function el(id) {
                 return document.getElementById(id);
@@ -1615,10 +1549,9 @@
                             }
                         }
 
-                        // Barcode belum terdaftar: panel pendaftaran dibuka otomatis.
+                        // Barcode belum terdaftar: arahkan pendaftaran ke menu Daftar Produk.
                         if (kode && ! isi.barcode_registered && daftar.length === 0 && sepertiBarcode(kata)) {
-                            bukaPanelBarcode(kode);
-                            tampilkanPesan('Barcode ' + kode + ' belum terdaftar. Ketik nama barangnya untuk dicocokkan.', 'text-amber-600');
+                            tampilkanPesan('Barcode ' + amanTeks(kode) + ' belum terdaftar. Daftarkan melalui menu Daftar Produk.', 'text-amber-600');
                             el('cari').value = '';
 
                             return;
@@ -1650,8 +1583,7 @@
                     }
 
                     if (sepertiBarcode(kata)) {
-                        bukaPanelBarcode(bersihkanKode(kata));
-                        tampilkanPesan('Barcode belum dikenal katalog offline. Pilih barang dari rekomendasi lalu simpan.', 'text-amber-600');
+                        tampilkanPesan('Barcode belum dikenal di katalog offline. Daftarkan melalui menu Daftar Produk saat tersedia.', 'text-amber-600');
                         el('cari').value = '';
 
                         return;
@@ -1661,350 +1593,59 @@
                 });
             }
 
-            /** Satu pintu untuk semua hasil pemindaian (kamera, alat USB, ketik manual). */
+            /** Satu pintu untuk kamera tertanam, scanner USB, dan input manual. */
             function tanganiPindai(kode) {
                 var bersih = bersihkanKode(kode);
-
-                if (! bersih) {
-                    return;
-                }
-
-                // Panel pendaftaran terbuka -> kode masuk ke kolom barcode.
-                if (! el('panel-barcode').classList.contains('hidden')) {
-                    el('bc-kode').value = bersih;
-                    pesanBarcode('Barcode ' + bersih + ' terbaca. Ketik nama barangnya.', 'text-slate-600');
-                    el('bc-nama').focus();
-
-                    return;
-                }
+                if (! bersih) { return; }
 
                 el('cari').value = bersih;
                 cari(bersih);
             }
 
-            function bukaPemindai(sekaliPakai) {
-                if (! window.BarcodeScanner) {
-                    tampilkanPesan('Modul pemindai belum siap. Muat ulang halaman.', 'text-red-600');
+            function statusScanner(teks, aktif, galat) {
+                el('status-scanner-kasir').textContent = teks || '';
+                var indikator = el('indikator-scanner-kasir');
+                indikator.textContent = aktif ? 'Aktif' : (galat ? 'Perlu izin' : 'Nonaktif');
+                indikator.className = 'rounded-full px-2.5 py-1 text-[11px] font-semibold '
+                    + (aktif ? 'bg-emerald-100 text-emerald-700' : (galat ? 'bg-amber-100 text-amber-700' : 'bg-slate-200 text-slate-600'));
+                el('kamera-aktifkan').disabled = !! aktif;
+                el('kamera-nonaktifkan').disabled = ! aktif;
+            }
 
-                    return;
-                }
-
-                window.BarcodeScanner.mulai({
-                    sekaliPakai: sekaliPakai === true,
+            function siapkanScannerKasir() {
+                if (kontrolScannerKasir || ! window.BarcodeScanner || ! window.BarcodeScanner.pasang) { return; }
+                kontrolScannerKasir = window.BarcodeScanner.pasang({
+                    kontainer: 'scanner-kasir',
+                    sekaliPakai: false,
                     onDeteksi: tanganiPindai,
-                    onGagal: function (galat) {
-                        var pesan = (galat && galat.message)
-                            ? galat.message
-                            : (typeof galat === 'string' && galat ? galat : 'kamera tidak aktif');
-                        tampilkanPesan('Pemindai kamera tidak aktif: ' + pesan + ' Silakan pakai kotak ketik/tembak kode yang muncul, atau alat pemindai USB.', 'text-amber-600');
+                    onStatus: function (teks) {
+                        el('status-scanner-kasir').textContent = teks || 'Scanner siap.';
                     },
                 });
             }
 
-            /* ------------------------------------------------------------ */
-            /* Panel pendaftaran barcode                                     */
-            /* ------------------------------------------------------------ */
-
-            function pesanBarcode(teks, kelas) {
-                var kotak = el('bc-pesan');
-                kotak.className = 'mt-2 text-xs ' + (kelas || 'text-slate-600');
-                kotak.textContent = teks || '';
-            }
-
-            function bukaPanelBarcode(kode) {
-                el('panel-barcode').classList.remove('hidden');
-                el('bc-kode').value = kode ? bersihkanKode(kode) : '';
-
-                if (kode) {
-                    el('bc-nama').focus();
-                } else {
-                    el('bc-kode').focus();
-                }
-
-                pesanBarcode(kode
-                    ? 'Barcode ' + bersihkanKode(kode) + ' siap dipasangkan ke barang.'
-                    : 'Pindai atau ketik barcodenya lebih dahulu.', 'text-slate-600');
-            }
-
-            function tutupPanelBarcode() {
-                el('panel-barcode').classList.add('hidden');
-                el('bc-saran').classList.add('hidden');
-            }
-
-            function bersihkanPanelBarcode() {
-                produkBarcode = null;
-                el('bc-kode').value = '';
-                el('bc-nama').value = '';
-                el('bc-harga').value = '';
-                el('bc-jumlah').value = 1;
-                el('bc-terpilih').classList.add('hidden');
-                el('bc-daftar').classList.add('hidden');
-                el('bc-saran').classList.add('hidden');
-                pesanBarcode('');
-            }
-
-            function gambarSaran(daftar) {
-                var kotak = el('bc-saran');
-                kotak.innerHTML = '';
-
-                if (! daftar || daftar.length === 0) {
-                    kotak.classList.add('hidden');
-
+            function aktifkanKamera() {
+                siapkanScannerKasir();
+                if (! kontrolScannerKasir) {
+                    statusScanner('Scanner tidak tersedia. Gunakan scanner USB atau pencarian.', false, true);
                     return;
                 }
-
-                daftar.forEach(function (produk) {
-                    var pilihan = document.createElement('button');
-                    pilihan.type = 'button';
-                    pilihan.className = 'flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-indigo-50';
-                    pilihan.innerHTML = '<span>'
-                        + '<span class="block font-medium text-slate-900">' + amanTeks(produk.name) + '</span>'
-                        + '<span class="block text-xs text-slate-500">' + amanTeks(produk.sku)
-                        + ' &middot; stok ' + amanTeks(produk.stock) + '</span>'
-                        + '</span>'
-                        + '<span class="text-xs font-semibold text-slate-700">' + rupiah(produk.sell_price) + '</span>';
-
-                    pilihan.addEventListener('click', function () {
-                        pilihProdukBarcode(produk);
-                    });
-
-                    kotak.appendChild(pilihan);
+                statusScanner('Meminta akses kamera…', false, false);
+                el('kamera-aktifkan').disabled = true;
+                kontrolScannerKasir.mulai().then(function () {
+                    statusScanner('Kamera aktif — arahkan barcode ke kamera.', true, false);
+                }).catch(function (galat) {
+                    var pesan = galat && galat.message ? galat.message : 'Kamera tidak dapat diaktifkan.';
+                    statusScanner(pesan, false, true);
+                    el('kamera-aktifkan').disabled = false;
                 });
-
-                kotak.classList.remove('hidden');
             }
 
-            /** Rekomendasi barang muncul otomatis sambil kasir mengetik nama. */
-            function cariSaran(nama) {
-                var kata = String(nama || '').trim();
-
-                if (kata.length < 2) {
-                    el('bc-saran').classList.add('hidden');
-
-                    return;
-                }
-
-                if (! navigator.onLine) {
-                    if (window.PosOffline) {
-                        window.PosOffline.cariKatalogLokal(kata).then(function (hasil) {
-                            gambarSaran(hasil.map(function (produk) {
-                                return dariKatalogLokal({ produk: produk, alias: null });
-                            }));
-                        });
-                    }
-
-                    return;
-                }
-
-                fetch(rute.barcodeSaran + '?q=' + encodeURIComponent(kata), {
-                    headers: { Accept: 'application/json' },
-                    credentials: 'same-origin',
-                })
-                    .then(function (respons) {
-                        return respons.json();
-                    })
-                    .then(function (isi) {
-                        gambarSaran(isi.data || []);
-                    })
-                    .catch(function () {
-                        el('bc-saran').classList.add('hidden');
-                    });
+            function nonaktifkanKamera() {
+                if (kontrolScannerKasir) { kontrolScannerKasir.hentikan(); }
+                statusScanner('Kamera dinonaktifkan. Scanner USB tetap dapat digunakan.', false, false);
             }
 
-            function gambarBarcodeTerdaftar(produk) {
-                var kotak = el('bc-daftar');
-                var daftar = produk.barcodes || [];
-
-                if (daftar.length === 0) {
-                    kotak.classList.add('hidden');
-                    kotak.innerHTML = '';
-
-                    return;
-                }
-
-                kotak.innerHTML = '<p class="mb-1 font-medium text-slate-700">Barcode terdaftar untuk barang ini:</p>';
-
-                daftar.forEach(function (satu) {
-                    var baris = document.createElement('div');
-                    baris.className = 'flex items-center justify-between gap-2 rounded-md bg-white px-2 py-1';
-                    baris.innerHTML = '<span>' + amanTeks(satu.code) + ' &middot; ' + rupiah(satu.price)
-                        + ' &middot; ' + amanTeks(satu.quantity) + ' pcs'
-                        + (satu.price_source === 'master' ? ' &middot; ikut harga master' : '')
-                        + '</span>';
-
-                    if (satu.id) {
-                        var hapus = document.createElement('button');
-                        hapus.type = 'button';
-                        hapus.className = 'text-[11px] font-semibold text-red-600 hover:underline';
-                        hapus.textContent = 'Lepas';
-                        hapus.addEventListener('click', function () {
-                            hapusBarcodeTerdaftar(satu.id);
-                        });
-                        baris.appendChild(hapus);
-                    }
-
-                    kotak.appendChild(baris);
-                });
-
-                kotak.classList.remove('hidden');
-            }
-
-            function pilihProdukBarcode(produk) {
-                produkBarcode = produk;
-
-                el('bc-nama').value = produk.name;
-                el('bc-harga').value = Number(produk.sell_price || 0);
-                el('bc-jumlah').value = Number(produk.default_quantity || 1);
-                el('bc-saran').classList.add('hidden');
-
-                var kotak = el('bc-terpilih');
-                kotak.classList.remove('hidden');
-                kotak.innerHTML = '<p class="font-semibold text-slate-900">' + amanTeks(produk.name) + '</p>'
-                    + '<p class="text-xs text-slate-500">' + amanTeks(produk.sku)
-                    + ' &middot; harga master ' + rupiah(produk.base_price)
-                    + ' &middot; stok ' + amanTeks(produk.stock) + ' ' + amanTeks(produk.unit || '') + '</p>';
-
-                gambarBarcodeTerdaftar(produk);
-                pesanBarcode('Barang dipilih. Sesuaikan harga & jumlah lalu simpan.', 'text-slate-600');
-            }
-
-            function simpanBarcode() {
-                var kode = bersihkanKode(el('bc-kode').value);
-                var nama = el('bc-nama').value.trim();
-                var harga = el('bc-harga').value;
-                var jumlah = Math.max(1, Number(el('bc-jumlah').value || 1));
-                var keKeranjang = el('bc-ke-keranjang').checked;
-
-                if (! kode) {
-                    pesanBarcode('Barcode belum terbaca. Pindai atau ketik kodenya.', 'text-red-600');
-
-                    return;
-                }
-
-                if (! produkBarcode && ! nama) {
-                    pesanBarcode('Ketik nama barang lalu pilih rekomendasinya.', 'text-red-600');
-
-                    return;
-                }
-
-                // Offline: simpan ke antrian lokal, barang wajib dipilih dari rekomendasi.
-                if (! navigator.onLine) {
-                    if (! window.PosOffline || ! produkBarcode) {
-                        pesanBarcode('Sedang offline: pilih barang dari daftar rekomendasi lebih dahulu.', 'text-red-600');
-
-                        return;
-                    }
-
-                    window.PosOffline.antrikanBarcode({
-                        barcode: kode,
-                        product_id: produkBarcode.id,
-                        name: produkBarcode.name,
-                        sell_price: harga === '' ? null : Number(harga),
-                        base_price: produkBarcode.base_price,
-                        quantity: jumlah,
-                    }).then(function () {
-                        pesanBarcode('Barcode disimpan lokal dan akan dikirim saat jaringan kembali.', 'text-emerald-600');
-
-                        if (keKeranjang) {
-                            tambah(Object.assign({}, produkBarcode, {
-                                sell_price: harga === '' ? produkBarcode.sell_price : Number(harga),
-                                matched_barcode: kode,
-                                price_source: 'barcode',
-                            }), jumlah);
-                        }
-
-                        bersihkanPanelBarcode();
-                    }).catch(function (galat) {
-                        pesanBarcode((galat && galat.message) ? galat.message : 'Gagal menyimpan barcode ke antrian.', 'text-red-600');
-                    });
-
-                    return;
-                }
-
-                var muatan = {
-                    barcode: kode,
-                    product_id: produkBarcode ? produkBarcode.id : null,
-                    name: nama || null,
-                    sell_price: harga === '' ? null : Number(harga),
-                    quantity: jumlah,
-                    update_product_price: bolehUbahMaster && el('bc-master') ? el('bc-master').checked : false,
-                    replace: el('bc-pindah').checked,
-                };
-
-                pesanBarcode('Menyimpan...', 'text-slate-500');
-
-                fetch(rute.barcodeSimpan, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Accept: 'application/json',
-                        'X-CSRF-TOKEN': csrf,
-                    },
-                    credentials: 'same-origin',
-                    body: JSON.stringify(muatan),
-                })
-                    .then(function (respons) {
-                        return respons.json().then(function (isi) {
-                            return { ok: respons.ok, isi: isi };
-                        });
-                    })
-                    .then(function (hasil) {
-                        if (! hasil.ok) {
-                            pesanBarcode(hasil.isi.message || 'Barcode gagal disimpan.', 'text-red-600');
-                            gambarSaran(hasil.isi.suggestions || []);
-
-                            return;
-                        }
-
-                        pesanBarcode(hasil.isi.message, 'text-emerald-600');
-
-                        if (keKeranjang && hasil.isi.product) {
-                            tambah(hasil.isi.product, hasil.isi.product.default_quantity);
-                        }
-
-                        bersihkanPanelBarcode();
-
-                        if (window.PosOffline) {
-                            window.PosOffline.segarkanKatalog();
-                        }
-                    })
-                    .catch(function () {
-                        pesanBarcode('Jaringan bermasalah. Coba lagi atau simpan saat offline.', 'text-red-600');
-                    });
-            }
-
-            function hapusBarcodeTerdaftar(id) {
-                fetch(rute.barcodeHapus + '/' + id, {
-                    method: 'DELETE',
-                    headers: {
-                        Accept: 'application/json',
-                        'X-CSRF-TOKEN': csrf,
-                    },
-                    credentials: 'same-origin',
-                })
-                    .then(function (respons) {
-                        return respons.json();
-                    })
-                    .then(function (isi) {
-                        pesanBarcode(isi.message || 'Barcode dilepas.', 'text-emerald-600');
-
-                        if (produkBarcode) {
-                            produkBarcode.barcodes = (produkBarcode.barcodes || []).filter(function (satu) {
-                                return satu.id !== id;
-                            });
-                            gambarBarcodeTerdaftar(produkBarcode);
-                        }
-
-                        if (window.PosOffline) {
-                            window.PosOffline.segarkanKatalog();
-                        }
-                    })
-                    .catch(function () {
-                        pesanBarcode('Barcode gagal dilepas.', 'text-red-600');
-                    });
-            }
-
-            /* ------------------------------------------------------------ */
             /* Simpan transaksi                                              */
             /* ------------------------------------------------------------ */
 
@@ -2142,45 +1783,12 @@
             }
 
             /* ------------------------------------------------------------ */
-            /* Pemasangan tombol & pintasan                                  */
+            /* ------------------------------------------------------------ */
+            /* Scanner tertanam, pencarian, dan pintasan                      */
             /* ------------------------------------------------------------ */
 
-            el('tombol-pindai').addEventListener('click', function () {
-                bukaPemindai(false);
-            });
-
-            el('tombol-daftar').addEventListener('click', function () {
-                bukaPanelBarcode(bersihkanKode(el('cari').value));
-            });
-
-            el('bc-pindai').addEventListener('click', function () {
-                bukaPemindai(true);
-            });
-
-            el('bc-simpan').addEventListener('click', simpanBarcode);
-            el('bc-batal').addEventListener('click', tutupPanelBarcode);
-            el('bc-bersih').addEventListener('click', bersihkanPanelBarcode);
-
-            el('bc-nama').addEventListener('input', function () {
-                produkBarcode = null;
-                el('bc-terpilih').classList.add('hidden');
-
-                if (jedaSaran) {
-                    clearTimeout(jedaSaran);
-                }
-
-                var nama = el('bc-nama').value;
-                jedaSaran = setTimeout(function () {
-                    cariSaran(nama);
-                }, 250);
-            });
-
-            el('bc-kode').addEventListener('keydown', function (event) {
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    el('bc-nama').focus();
-                }
-            });
+            el('kamera-aktifkan').addEventListener('click', aktifkanKamera);
+            el('kamera-nonaktifkan').addEventListener('click', nonaktifkanKamera);
 
             el('cari').addEventListener('keydown', function (event) {
                 if (event.key === 'Enter') {
@@ -2233,25 +1841,16 @@
                 window.BarcodeScanner.pantauAlatPindai({ onDeteksi: tanganiPindai });
             }
 
-            // Jalan pintas papan tombol tetap ada sebagai pelengkap (opsional).
+            // F3 mengaktifkan kamera tertanam; F2 menyimpan transaksi.
             document.addEventListener('keydown', function (event) {
                 if (event.key === 'F3') {
                     event.preventDefault();
-                    bukaPemindai(false);
+                    aktifkanKamera();
                 }
 
                 if (event.key === 'F2') {
                     event.preventDefault();
                     simpan();
-                }
-
-                if (event.key === 'F4') {
-                    event.preventDefault();
-                    bukaPanelBarcode('');
-                }
-
-                if (event.key === 'Escape') {
-                    tutupPanelBarcode();
                 }
             });
 
@@ -2275,14 +1874,23 @@
             });
 
             window.addEventListener('pos-offline:barcode-selesai', function (event) {
-                pesanBarcode(event.detail.dikirim + ' barcode terkirim ke server, ' + event.detail.gagal + ' gagal.',
+                tampilkanPesan(event.detail.dikirim + ' barcode terkirim ke server, ' + event.detail.gagal + ' gagal.',
                     event.detail.gagal ? 'text-amber-600' : 'text-emerald-600');
             });
 
             gambarStatus(navigator.onLine, 0, 0);
             gambarKeranjang();
             perbaruiInfoKatalog();
-            el('cari').focus();
+            siapkanScannerKasir();
+            aktifkanKamera();
+
+            window.addEventListener('pagehide', function () {
+                if (kontrolScannerKasir) { kontrolScannerKasir.hentikan(); }
+            });
+
+            if (! window.matchMedia || window.matchMedia('(pointer: fine)').matches) {
+                el('cari').focus();
+            }
         })();
     </script>
 @endsection
