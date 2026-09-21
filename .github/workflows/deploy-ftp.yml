@@ -1,4 +1,4 @@
-name: Deploy Incremental via FTPS ke Namecheap
+name: Deploy Incremental via SSH ke Namecheap
 
 on:
   push:
@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: Build, upload, dan migrate
+    name: Build, rsync, dan migrate
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -41,72 +41,46 @@ jobs:
       - name: Hapus penanda Vite development
         run: rm -f public/hot
 
-      - name: Upload perubahan via FTPS
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
-          port: 21
-          timeout: 600000
-          log-level: standard
-
-          # Target folder cPanel
-          local-dir: ./
-          server-dir: ./
-          dangerous-clean-slate: false
-          state-name: .ftp-deploy-sync-state.json
-
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/.github/**
-
-            *.log
-            **/*.log
-            .DS_Store
-            **/.DS_Store
-            .env
-            .env.*
-            .phpactor.json
-            .phpunit.result.cache
-            .codex/**
-            .cursor/**
-            .idea/**
-            .nova/**
-            .phpunit.cache/**
-            .vscode/**
-            .zed/**
-            auth.json
-
-            node_modules/**
-            **/node_modules/**
-            vendor/**
-            **/vendor/**
-            _ide_helper.php
-            **/_ide_helper.php
-
-            public/fonts-manifest.dev.json
-            public/hot
-            public/hot/**
-            public/storage
-            public/storage/**
-            public/build/**/*.map
-
-            storage/*.key
-            storage/pail/**
-            storage/logs/**
-            storage/framework/cache/**
-            storage/framework/sessions/**
-            storage/framework/views/**
-            storage/app/**
-
-            bootstrap/cache/**
-            Homestead.json
-            Homestead.yaml
-            Thumbs.db
-            tests/**
+      # Mengganti FTPS dengan rsync via SSH (bebas error FIN packet / FTP timeout)
+      - name: Sinkronisasi file via rsync (Password SSH)
+        run: |
+          sudo apt-get update && sudo apt-get install -y sshpass
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" rsync -avz --delete \
+            -e "ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT || '21098' }}" \
+            --exclude='/.git/' \
+            --exclude='/.github/' \
+            --exclude='*.log' \
+            --exclude='.DS_Store' \
+            --exclude='.env*' \
+            --exclude='.phpactor.json' \
+            --exclude='.phpunit.result.cache' \
+            --exclude='.codex/' \
+            --exclude='.cursor/' \
+            --exclude='.idea/' \
+            --exclude='.nova/' \
+            --exclude='.phpunit.cache/' \
+            --exclude='.vscode/' \
+            --exclude='.zed/' \
+            --exclude='auth.json' \
+            --exclude='/node_modules/' \
+            --exclude='/vendor/' \
+            --exclude='_ide_helper.php' \
+            --exclude='/public/fonts-manifest.dev.json' \
+            --exclude='/public/hot' \
+            --exclude='/public/storage' \
+            --exclude='/storage/*.key' \
+            --exclude='/storage/pail/' \
+            --exclude='/storage/logs/' \
+            --exclude='/storage/framework/cache/' \
+            --exclude='/storage/framework/sessions/' \
+            --exclude='/storage/framework/views/' \
+            --exclude='/storage/app/' \
+            --exclude='/bootstrap/cache/' \
+            --exclude='Homestead.json' \
+            --exclude='Homestead.yaml' \
+            --exclude='Thumbs.db' \
+            --exclude='/tests/' \
+            ./ ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_APP_PATH || '/home/clouyogf/public_html/pos' }}
 
       - name: Periksa dan jalankan migration pending
         uses: appleboy/ssh-action@v1.2.2
@@ -140,6 +114,7 @@ jobs:
             if [ -z "$APP_DIR" ] || [ ! -f "$APP_DIR/artisan" ]; then
               echo "ERROR: Folder aplikasi Laravel tidak ditemukan."
               echo "Isi GitHub Secret SSH_APP_PATH dengan path folder yang berisi file artisan."
+              echo "Contoh: /home/clouyogf/public_html/pos"
               exit 1
             fi
 
