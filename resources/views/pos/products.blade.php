@@ -8,7 +8,7 @@
             <h1 class="text-lg font-semibold text-slate-900">Daftar Produk &middot; {{ $branch?->name ?? 'Cabang Anda' }}</h1>
             <p class="text-xs text-slate-500">Barang yang tersedia di cabang Anda. Daftarkan atau ganti barcode langsung dari sini.</p>
         </div>
-        <a href="{{ route('pos.index') }}" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">Ke Kasir</a>
+        <a href="{{ route('pos.index') }}" class="rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800">Ke Kasir</a>
     </div>
 
     <form method="GET" class="mb-4 flex flex-wrap items-end gap-3 rounded-xl bg-white p-4 shadow">
@@ -18,7 +18,7 @@
                    class="mt-1 w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
                    placeholder="Ketik nama barang atau SKU">
         </div>
-        <button class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white">Cari</button>
+        <button class="rounded-md bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-medium text-white">Cari</button>
         @if ($q !== '')
             <a href="{{ route('pos.products') }}" class="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-600">Reset</a>
         @endif
@@ -176,7 +176,7 @@
 
             <div class="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <button type="button" id="popup-batal" class="w-full rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-600 sm:w-auto">Batal</button>
-                <button type="button" id="popup-simpan" class="w-full rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 sm:w-auto">Simpan</button>
+                <button type="button" id="popup-simpan" class="w-full rounded-md bg-brand-700 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800 sm:w-auto">Simpan</button>
             </div>
         </div>
     </div>

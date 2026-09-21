@@ -5,7 +5,7 @@
 @section('content')
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h1 class="text-lg font-semibold text-slate-900">Kategori Barang</h1>
-        <a href="{{ route('categories.create') }}" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white">Tambah kategori</a>
+        <a href="{{ route('categories.create') }}" class="rounded-md bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-medium text-white">Tambah kategori</a>
     </div>
 
     <div class="overflow-x-auto rounded-xl bg-white shadow">

@@ -48,7 +48,7 @@
                         <label for="cari" class="mt-4 block text-xs font-medium text-slate-600">Cari barang / scanner USB</label>
                         <input id="cari" type="text" autocomplete="off"
                                placeholder="Nama barang, SKU, atau tembak barcode"
-                               class="mt-1 min-h-11 w-full rounded-md border border-slate-300 px-3 py-2 text-base sm:text-sm">
+                               class="field-search">
                         <p class="mt-2 text-xs leading-relaxed text-slate-400">
                             Hasil kamera maupun scanner USB langsung diproses dan barang otomatis masuk ke keranjang.
                             Barcode baru didaftarkan melalui menu Daftar Produk.
@@ -142,12 +142,12 @@
 
                     <dl class="space-y-1 rounded-lg bg-slate-50 px-3 py-2 text-sm">
                         <div class="flex justify-between"><dt class="text-slate-500">Subtotal</dt><dd id="v-subtotal" class="font-medium">Rp 0</dd></div>
-                        <div class="flex justify-between"><dt class="text-slate-500">Total</dt><dd id="v-total" class="text-base font-semibold text-slate-900">Rp 0</dd></div>
+                        <div class="flex items-center justify-between border-t border-slate-200 pt-2"><dt class="text-sm font-medium text-slate-600">Total</dt><dd id="v-total" class="pos-total">Rp 0</dd></div>
                         <div class="flex justify-between"><dt class="text-slate-500">Kembali</dt><dd id="v-kembali" class="font-medium">Rp 0</dd></div>
                     </dl>
 
                     <button type="button" id="simpan"
-                            class="w-full rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
+                            class="btn-primary-lg">
                         Simpan transaksi
                     </button>
 
@@ -177,7 +177,7 @@
                             <label class="block text-xs font-medium text-slate-600">Catatan</label>
                             <input name="note" type="text" class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
                         </div>
-                        <button class="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+                        <button class="w-full rounded-md bg-brand-700 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800">
                             Tutup shift
                         </button>
                     </form>
@@ -189,7 +189,7 @@
                             <input name="opening_cash" type="number" min="0" step="0.01" value="0" required
                                    class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
                         </div>
-                        <button class="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+                        <button class="w-full rounded-md bg-brand-700 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800">
                             Buka shift
                         </button>
                     </form>
@@ -210,7 +210,7 @@
 
                 <div class="mt-3 flex flex-wrap gap-2">
                     <button type="button" id="kirim-antrian"
-                            class="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700">
+                            class="rounded-md bg-brand-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-800">
                         Kirim transaksi
                     </button>
                     <button type="button" id="kirim-antrian-barcode"

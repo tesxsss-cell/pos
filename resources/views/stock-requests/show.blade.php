@@ -67,7 +67,7 @@
                 <label class="block text-sm font-medium text-slate-700">Catatan persetujuan</label>
                 <input name="response_note" class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2">
                 <div class="mt-3 flex flex-wrap items-center gap-2">
-                    <button class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white">Setujui request</button>
+                    <button class="rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800">Setujui request</button>
                     <button type="submit" formaction="{{ route('stock-requests.reject', $stockRequest) }}"
                             class="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white">Tolak request</button>
                     <span class="text-xs text-slate-500">Untuk menolak, catatan wajib diisi.</span>

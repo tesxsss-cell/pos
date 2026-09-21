@@ -9,7 +9,7 @@
             <p class="text-xs text-slate-500">Harga pokok setiap batch FIFO terbawa saat barang dipindahkan.</p>
         </div>
         @if (auth()->user()->isCentral())
-            <a href="{{ route('transfers.create') }}" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white">Buat mutasi</a>
+            <a href="{{ route('transfers.create') }}" class="rounded-md bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-medium text-white">Buat mutasi</a>
         @endif
     </div>
 
@@ -23,7 +23,7 @@
                 @endforeach
             </select>
         </div>
-        <button class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white">Filter</button>
+        <button class="rounded-md bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-medium text-white">Filter</button>
     </form>
 
     <div class="overflow-x-auto rounded-xl bg-white shadow">

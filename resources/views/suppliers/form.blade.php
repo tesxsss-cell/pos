@@ -56,7 +56,7 @@
             </label>
 
             <div class="flex items-center gap-3 pt-2">
-                <button class="rounded-md bg-slate-900 px-4 py-2 font-medium text-white">Simpan</button>
+                <button class="rounded-md bg-brand-700 hover:bg-brand-800 px-4 py-2 font-medium text-white">Simpan</button>
                 <a href="{{ route('suppliers.index') }}" class="text-sm text-slate-600 hover:underline">Batal</a>
             </div>
         </form>

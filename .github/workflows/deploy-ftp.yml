@@ -1,27 +1,46 @@
 name: Deploy Incremental via FTPS ke Namecheap
 
-# Jalan otomatis saat ada push ke main, atau jalankan manual dari tab Actions.
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
-# Cegah dua deploy menulis ke folder production secara bersamaan.
+permissions:
+  contents: read
+
 concurrency:
   group: deploy-pos-production
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Sinkronkan file yang berubah saja
+    name: Build, upload, dan migrate
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Ambil source terbaru dari GitHub
         uses: actions/checkout@v4
 
-      # File .ftp-deploy-sync-state.json disimpan di server.
-      # Setelah satu deploy berhasil, hanya file baru/berubah yang akan diupload.
+      - name: Siapkan Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Instal dependensi frontend
+        run: npm ci
+
+      - name: Build Tailwind CSS dan JavaScript
+        run: npm run build
+
+      - name: Pastikan hasil build tersedia
+        run: test -f public/build/manifest.json
+
+      - name: Hapus penanda Vite development
+        run: rm -f public/hot
+
       - name: Upload perubahan via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -31,22 +50,16 @@ jobs:
           protocol: ftps
           port: 21
           timeout: 300000
-          log-level: standard
-
-          # Akun FTP khusus harus memiliki root:
-          # /home/clouyogf/public_html/pos
+          log-level: verbose
           local-dir: ./
           server-dir: ./
           dangerous-clean-slate: false
           state-name: .ftp-deploy-sync-state.json
 
-          # Pola .gitignore proyek + file runtime yang tidak boleh ditimpa.
-          # Jangan masukkan .ftp-deploy-sync-state.json ke daftar ini.
           exclude: |
             **/.git*
             **/.git*/**
             **/.github/**
-
             *.log
             **/*.log
             .DS_Store
@@ -64,21 +77,17 @@ jobs:
             .vscode/**
             .zed/**
             auth.json
-
             node_modules/**
             **/node_modules/**
             vendor/**
             **/vendor/**
             _ide_helper.php
             **/_ide_helper.php
-
-            public/build/**
             public/fonts-manifest.dev.json
             public/hot
             public/hot/**
             public/storage
             public/storage/**
-
             storage/*.key
             storage/pail/**
             storage/logs/**
@@ -86,7 +95,6 @@ jobs:
             storage/framework/sessions/**
             storage/framework/views/**
             storage/app/**
-
             bootstrap/cache/**
             Homestead.json
             **/Homestead.json
@@ -95,3 +103,49 @@ jobs:
             Thumbs.db
             **/Thumbs.db
             tests/**
+
+      # Langkah ini selalu dijalankan setelah upload.
+      # Laravel hanya menjalankan migration yang belum tercatat di database.
+      # Jika tidak ada migration baru, hasilnya "Nothing to migrate" dan
+      # tidak ada perubahan pada database.
+      - name: Periksa dan jalankan migration pending
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT || '21098' }}
+          command_timeout: 10m
+          script: |
+            set -e
+
+            APP_DIR="${{ secrets.SSH_APP_PATH }}"
+
+            if [ -z "$APP_DIR" ]; then
+              for CANDIDATE in "$HOME/public_html/pos" "$HOME/public_html"; do
+                if [ -f "$CANDIDATE/artisan" ]; then
+                  APP_DIR="$CANDIDATE"
+                  break
+                fi
+              done
+            fi
+
+            if [ -z "$APP_DIR" ]; then
+              ARTISAN_FILE="$(find "$HOME/public_html" -maxdepth 4 -type f -name artisan -print -quit 2>/dev/null || true)"
+              if [ -n "$ARTISAN_FILE" ]; then
+                APP_DIR="$(dirname "$ARTISAN_FILE")"
+              fi
+            fi
+
+            if [ -z "$APP_DIR" ] || [ ! -f "$APP_DIR/artisan" ]; then
+              echo "ERROR: Folder aplikasi Laravel tidak ditemukan."
+              echo "Isi GitHub Secret SSH_APP_PATH dengan path folder yang berisi file artisan."
+              echo "Contoh: /home/clourvyr/public_html/pos"
+              exit 1
+            fi
+
+            echo "Aplikasi Laravel ditemukan di: $APP_DIR"
+            cd "$APP_DIR"
+
+            php artisan migrate --force --no-interaction
+            php artisan optimize:clear

@@ -13,7 +13,7 @@
                 <form method="POST" action="{{ route('purchases.post', $purchase) }}"
                       onsubmit="return confirm('Posting dokumen ini? Stok akan bertambah dan batch FIFO terbentuk.')">
                     @csrf
-                    <button class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white">Posting ke stok</button>
+                    <button class="rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800">Posting ke stok</button>
                 </form>
             @endif
             <a href="{{ route('purchases.index') }}" class="text-sm text-slate-600 hover:underline">Kembali</a>

@@ -25,7 +25,7 @@
                         <input id="barcode" name="barcode" value="{{ old('barcode', $product->barcode) }}"
                                class="w-full rounded-md border border-slate-300 px-3 py-2">
                         <button type="button" data-pindai data-pindai-target="#barcode" data-pindai-sekali
-                                class="whitespace-nowrap rounded-md bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+                                class="whitespace-nowrap rounded-md bg-brand-700 px-3 py-2 text-sm font-semibold text-white hover:bg-brand-800">
                             Pindai
                         </button>
                     </div>
@@ -81,7 +81,7 @@
             </label>
 
             <div class="flex items-center gap-3 pt-2">
-                <button class="rounded-md bg-slate-900 px-4 py-2 font-medium text-white">Simpan</button>
+                <button class="rounded-md bg-brand-700 hover:bg-brand-800 px-4 py-2 font-medium text-white">Simpan</button>
                 <a href="{{ route('products.index') }}" class="text-sm text-slate-600 hover:underline">Batal</a>
             </div>
         </form>

@@ -23,7 +23,7 @@
                 @endforeach
             </select>
         </div>
-        <button class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white">Terapkan</button>
+        <button class="rounded-md bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-medium text-white">Terapkan</button>
         <a href="{{ route('reports.monthly') }}" class="text-sm text-slate-600 hover:underline">Lihat laporan bulanan</a>
     </form>
 
@@ -80,7 +80,7 @@
                             <span class="text-slate-500">{{ $produk->qty_terjual }} unit</span>
                         </div>
                         <div class="mt-1 h-2 rounded bg-slate-100">
-                            <div class="h-2 rounded bg-slate-800" style="width: {{ round(($produk->qty_terjual / $maksimum) * 100) }}%"></div>
+                            <div class="h-2 rounded bg-brand-600" style="width: {{ round(($produk->qty_terjual / $maksimum) * 100) }}%"></div>
                         </div>
                         <p class="mt-1 text-xs text-slate-400">
                             Rp {{ number_format((float) $produk->nilai_penjualan, 0, ',', '.') }} &middot;

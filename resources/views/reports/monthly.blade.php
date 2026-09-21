@@ -20,7 +20,7 @@
                 @endforeach
             </select>
         </div>
-        <button class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white">Terapkan</button>
+        <button class="rounded-md bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-medium text-white">Terapkan</button>
         <a href="{{ route('reports.daily') }}" class="text-sm text-slate-600 hover:underline">Lihat laporan harian</a>
     </form>
 
@@ -49,7 +49,7 @@
             @forelse ($series as $row)
                 <div class="flex flex-1 flex-col items-center gap-1">
                     <div class="flex h-40 w-full items-end justify-center">
-                        <div class="w-6 rounded-t bg-slate-800" style="height: {{ max(round(((float) $row['penjualan'] / $puncak) * 100), 2) }}%"
+                        <div class="w-6 rounded-t bg-brand-600" style="height: {{ max(round(((float) $row['penjualan'] / $puncak) * 100), 2) }}%"
                              title="Rp {{ number_format((float) $row['penjualan'], 0, ',', '.') }}"></div>
                     </div>
                     <span class="text-[10px] text-slate-400">{{ \Illuminate\Support\Carbon::parse($row['bulan'].'-01')->format('M') }}</span>

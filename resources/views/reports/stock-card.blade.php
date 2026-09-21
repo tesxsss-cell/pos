@@ -32,7 +32,7 @@
             <label class="block text-xs font-medium text-slate-500">Sampai tanggal</label>
             <input name="sampai" type="date" value="{{ $to }}" class="mt-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm">
         </div>
-        <button class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white">Tampilkan</button>
+        <button class="rounded-md bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-medium text-white">Tampilkan</button>
     </form>
 
     @if (! $productId || ! $branchId)

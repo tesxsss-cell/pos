@@ -23,7 +23,7 @@
                 @endforeach
             </select>
         </div>
-        <button class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white">Terapkan</button>
+        <button class="rounded-md bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-medium text-white">Terapkan</button>
     </form>
 
     <div class="mb-4 rounded-xl bg-white p-6 shadow">
@@ -64,7 +64,7 @@
             @forelse ($series as $row)
                 <div class="flex min-w-12 flex-1 flex-col items-center gap-1">
                     <div class="flex h-44 w-full items-end justify-center gap-1">
-                        <div class="w-3 rounded-t bg-slate-800" style="height: {{ max(round(((float) $row->penjualan / $puncak) * 100), 2) }}%"
+                        <div class="w-3 rounded-t bg-brand-600" style="height: {{ max(round(((float) $row->penjualan / $puncak) * 100), 2) }}%"
                              title="Penjualan Rp {{ number_format((float) $row->penjualan, 0, ',', '.') }}"></div>
                         <div class="w-3 rounded-t bg-emerald-500" style="height: {{ max(round(((float) $row->laba_kotor / $puncak) * 100), 2) }}%"
                              title="Laba kotor Rp {{ number_format((float) $row->laba_kotor, 0, ',', '.') }}"></div>
@@ -77,7 +77,7 @@
         </div>
 
         <div class="mt-3 flex gap-4 text-xs text-slate-500">
-            <span class="flex items-center gap-1"><span class="inline-block h-2 w-3 rounded bg-slate-800"></span> Penjualan</span>
+            <span class="flex items-center gap-1"><span class="inline-block h-2 w-3 rounded bg-brand-600"></span> Penjualan</span>
             <span class="flex items-center gap-1"><span class="inline-block h-2 w-3 rounded bg-emerald-500"></span> Laba kotor</span>
         </div>
     </div>

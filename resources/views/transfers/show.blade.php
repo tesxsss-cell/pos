@@ -95,7 +95,7 @@
                     <div class="mt-3 rounded-xl bg-white p-4 shadow">
                         <h2 class="font-semibold text-slate-900">Konfirmasi penerimaan di cabang</h2>
                         <p class="mt-1 text-xs text-slate-500">Isi jumlah yang benar-benar diterima. Batch FIFO dibentuk ulang di cabang dengan harga pokok yang sama.</p>
-                        <button class="mt-3 rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white">Terima barang</button>
+                        <button class="mt-3 rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800">Terima barang</button>
                     </div>
                 @endif
             </form>

@@ -25,7 +25,7 @@
                 </select>
             </div>
         @endif
-        <button class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white">Terapkan filter</button>
+        <button class="rounded-md bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-medium text-white">Terapkan filter</button>
     </form>
 
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -71,7 +71,7 @@
                                 <span>Rp {{ number_format((float) $row->penjualan, 0, ',', '.') }} &middot; laba Rp {{ number_format((float) $row->laba_kotor, 0, ',', '.') }}</span>
                             </div>
                             <div class="mt-1 h-3 w-full overflow-hidden rounded bg-slate-100">
-                                <div class="h-3 rounded bg-slate-800" style="width: {{ round(((float) $row->penjualan / $maxSeries) * 100, 2) }}%"></div>
+                                <div class="h-3 rounded bg-brand-600" style="width: {{ round(((float) $row->penjualan / $maxSeries) * 100, 2) }}%"></div>
                             </div>
                         </div>
                     @endforeach

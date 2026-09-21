@@ -8,7 +8,7 @@
             <h1 class="text-lg font-semibold text-slate-900">Kelola Akun Pengguna</h1>
             <p class="text-xs text-slate-500">Pemilik dapat mengelola akun admin; admin mengelola akun manager cabang dan kasir.</p>
         </div>
-        <a href="{{ route('users.create') }}" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white">Tambah akun</a>
+        <a href="{{ route('users.create') }}" class="rounded-md bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-medium text-white">Tambah akun</a>
     </div>
 
     <form method="GET" class="mb-4 flex flex-wrap items-end gap-3 rounded-xl bg-white p-4 shadow">
@@ -16,7 +16,7 @@
             <label class="block text-xs font-medium text-slate-500">Cari nama</label>
             <input name="q" value="{{ request('q') }}" class="mt-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm">
         </div>
-        <button class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white">Cari</button>
+        <button class="rounded-md bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-medium text-white">Cari</button>
     </form>
 
     <div class="overflow-x-auto rounded-xl bg-white shadow">

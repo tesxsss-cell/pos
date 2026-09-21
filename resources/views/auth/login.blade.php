@@ -27,7 +27,7 @@
                 Ingat saya
             </label>
 
-            <button class="w-full rounded-md bg-slate-900 px-4 py-2 font-medium text-white hover:bg-slate-800">Masuk</button>
+            <button class="w-full rounded-md bg-brand-700 px-4 py-2 font-medium text-white hover:bg-brand-800">Masuk</button>
         </form>
     </div>
 @endsection

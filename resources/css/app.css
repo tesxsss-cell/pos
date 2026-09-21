@@ -4,6 +4,67 @@
 @source '../../storage/framework/views/*.php';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    /* SRS Look & Feel #2 (Tipografi): sans-serif Inter, fallback Arial. */
+    --font-sans: 'Inter', Arial, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* SRS Look & Feel #1 (Warna): dominan biru + aksen. Tersedia sebagai bg-brand-*, text-brand-*, dst. */
+    --color-brand-50: #eff6ff;
+    --color-brand-100: #dbeafe;
+    --color-brand-200: #bfdbfe;
+    --color-brand-300: #93c5fd;
+    --color-brand-400: #60a5fa;
+    --color-brand-500: #3b82f6;
+    --color-brand-600: #2563eb;
+    --color-brand-700: #1d4ed8;
+    --color-brand-800: #1e40af;
+    --color-brand-900: #1e3a8a;
+}
+
+/* SRS Look & Feel #2: ukuran teks isi 14px. */
+body {
+    font-family: var(--font-sans);
+    font-size: 14px;
+}
+
+@layer components {
+    /* --- Navigasi sidebar (SRS Look & Feel #3 & #4) --- */
+    .app-sidebar-link {
+        @apply flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-brand-100 transition hover:bg-brand-800/70 hover:text-white;
+    }
+    .app-sidebar-link-active {
+        @apply bg-white text-brand-700 shadow-sm hover:bg-white hover:text-brand-700;
+    }
+    .app-sidebar-heading {
+        @apply px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wide text-brand-300;
+    }
+
+    /* --- Tombol (SRS Look & Feel #5: tombol besar untuk POS) --- */
+    .btn-primary {
+        @apply inline-flex items-center justify-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700;
+    }
+    .btn-primary-lg {
+        @apply inline-flex w-full items-center justify-center rounded-xl bg-brand-600 px-5 py-3.5 text-base font-semibold text-white shadow-sm transition hover:bg-brand-700;
+    }
+
+    /* --- Kolom pencarian barang yang jelas (SRS Look & Feel #5) --- */
+    .field-search {
+        @apply mt-1 min-h-12 w-full rounded-lg border border-slate-300 px-4 py-3 text-base focus:border-brand-500 focus:ring-2 focus:ring-brand-200;
+    }
+
+    /* --- Nominal transaksi menonjol, minimal 18px (SRS Look & Feel #2 & #5) --- */
+    .amount {
+        @apply text-lg font-semibold tabular-nums;
+    }
+    .pos-total {
+        @apply text-2xl font-bold tabular-nums text-brand-700;
+    }
+
+    /* --- Penanda status data (SRS Look & Feel #1: hijau=berhasil, merah=peringatan) --- */
+    .badge-success {
+        @apply rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700;
+    }
+    .badge-danger {
+        @apply rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700;
+    }
 }

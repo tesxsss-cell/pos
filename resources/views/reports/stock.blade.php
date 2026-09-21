@@ -15,7 +15,7 @@
                 @endforeach
             </select>
         </div>
-        <button class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white">Terapkan</button>
+        <button class="rounded-md bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-medium text-white">Terapkan</button>
         <a href="{{ route('reports.stock-card') }}" class="text-sm text-slate-600 hover:underline">Lihat kartu stok &amp; batch FIFO</a>
     </form>
 
