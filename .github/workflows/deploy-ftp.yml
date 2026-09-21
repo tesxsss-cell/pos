@@ -1,4 +1,4 @@
-name: Deploy Incremental via SSH (rsync) ke Namecheap
+name: Deploy Incremental via FTPS ke Namecheap
 
 on:
   push:
@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: Build, rsync, dan migrate
+    name: Build, upload, dan migrate
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -41,61 +41,79 @@ jobs:
       - name: Hapus penanda Vite development
         run: rm -f public/hot
 
-      - name: Sinkronisasi file ke server via rsync (SSH)
-        uses: easingthemes/ssh-deploy@v5.1.0
+      - name: Upload perubahan via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          REMOTE_HOST: ${{ secrets.SSH_HOST }}
-          REMOTE_USER: ${{ secrets.SSH_USERNAME }}
-          REMOTE_PORT: ${{ secrets.SSH_PORT || '21098' }}
-          ARGS: "-rlgoDzvc -i --delete"
-          SOURCE: "./"
-          TARGET: ${{ secrets.SSH_APP_PATH || '/home/clouyogf/public_html/pos' }}
-          EXCLUDES: |
-            /.git/
-            /.github/
-            /*.log
-            /**/*.log
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          timeout: 600000
+          log-level: standard
+
+          # Target folder cPanel
+          local-dir: ./
+          server-dir: ./
+          dangerous-clean-slate: false
+          state-name: .ftp-deploy-sync-state.json
+
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+
+            *.log
+            **/*.log
             .DS_Store
             **/.DS_Store
             .env
             .env.*
             .phpactor.json
             .phpunit.result.cache
-            .codex/
-            .cursor/
-            .idea/
-            .nova/
-            .phpunit.cache/
-            .vscode/
-            .zed/
+            .codex/**
+            .cursor/**
+            .idea/**
+            .nova/**
+            .phpunit.cache/**
+            .vscode/**
+            .zed/**
             auth.json
-            /node_modules/
-            /vendor/
+
+            node_modules/**
+            **/node_modules/**
+            vendor/**
+            **/vendor/**
             _ide_helper.php
-            /public/fonts-manifest.dev.json
-            /public/hot
-            /public/storage
-            /storage/*.key
-            /storage/pail/
-            /storage/logs/
-            /storage/framework/cache/
-            /storage/framework/sessions/
-            /storage/framework/views/
-            /storage/app/
-            /bootstrap/cache/
+            **/_ide_helper.php
+
+            public/fonts-manifest.dev.json
+            public/hot
+            public/hot/**
+            public/storage
+            public/storage/**
+            public/build/**/*.map
+
+            storage/*.key
+            storage/pail/**
+            storage/logs/**
+            storage/framework/cache/**
+            storage/framework/sessions/**
+            storage/framework/views/**
+            storage/app/**
+
+            bootstrap/cache/**
             Homestead.json
             Homestead.yaml
             Thumbs.db
-            /tests/
+            tests/**
 
-      - name: Jalankan migration dan optimasi Laravel
+      - name: Periksa dan jalankan migration pending
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || '21098' }}
           command_timeout: 10m
           script: |
