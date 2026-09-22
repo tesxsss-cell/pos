@@ -3,9 +3,8 @@
 @section('title', 'Kasir')
 
 @section('content')
-    <div class="grid gap-4 lg:grid-cols-3">
-        {{-- =========== Kolom kiri: scanner menyatu, pencarian, dan keranjang =========== --}}
-        <div class="space-y-4 lg:col-span-2">
+    {{-- Semua kartu berada dalam satu kolom yang berada di tengah pada layar komputer/laptop. --}}
+    <div class="mx-auto w-full max-w-3xl space-y-4">
             <style>
                 /* Scanner kasir menyatu di halaman, tanpa overlay/pop-up dan tanpa animasi. */
                 #scanner-kasir .bcs-kotak {
@@ -27,38 +26,7 @@
                 }
             </style>
             <div class="rounded-xl bg-white p-3 shadow sm:p-4">
-                <div class="kasir-pindai-grid">
-                    <section class="min-w-0">
-                        <div class="flex flex-wrap items-center justify-between gap-2">
-                            <div>
-                                <h1 class="text-lg font-semibold text-slate-900">Kasir &middot; {{ $branch->name }}</h1>
-                                <p class="text-xs text-slate-500">Pindai barcode terdaftar atau cari barang secara manual.</p>
-                            </div>
-                            @if ($shift)
-                                <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
-                                    Shift dibuka {{ $shift->opened_at?->format('d/m/Y H:i') }}
-                                </span>
-                            @else
-                                <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
-                                    Shift belum dibuka
-                                </span>
-                            @endif
-                        </div>
-
-                        <label for="cari" class="mt-4 block text-xs font-medium text-slate-600">Cari barang / scanner USB</label>
-                        <input id="cari" type="text" autocomplete="off"
-                               placeholder="Nama barang, SKU, atau tembak barcode"
-                               class="field-search">
-                        <p class="mt-2 text-xs leading-relaxed text-slate-400">
-                            Hasil kamera maupun scanner USB langsung diproses dan barang otomatis masuk ke keranjang.
-                            Barcode baru didaftarkan melalui menu Daftar Produk.
-                        </p>
-
-                        <div id="info-pindai" class="mt-3 hidden rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800"></div>
-                        <div id="hasil" class="mt-3 space-y-2"></div>
-                    </section>
-
-                    <section class="min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-3" aria-labelledby="judul-scanner-kasir">
+                <section class="min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-3" aria-labelledby="judul-scanner-kasir">
                         <div class="flex flex-wrap items-center justify-between gap-2">
                             <div>
                                 <h2 id="judul-scanner-kasir" class="text-sm font-semibold text-slate-900">Scanner barcode</h2>
@@ -82,35 +50,54 @@
                         <p class="mt-2 text-[11px] leading-relaxed text-slate-400">
                             Kamera mencoba aktif otomatis. Di HP gunakan HTTPS dan izinkan kamera belakang.
                         </p>
-                    </section>
-                </div>
-            </div>
+                </section>
 
-            {{-- =========== Keranjang =========== --}}
-            <div class="rounded-xl bg-white p-4 shadow">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-base font-semibold text-slate-900">Keranjang</h2>
-                    <button type="button" id="kosongkan" class="text-xs font-medium text-slate-500 hover:text-red-600">Kosongkan keranjang</button>
-                </div>
+                {{-- Kolom pencarian disembunyikan; hasil scan kamera/USB tetap diproses lewat elemen ini. --}}
+                <input id="cari" type="text" autocomplete="off" class="hidden" aria-hidden="true" tabindex="-1">
 
-                <p id="kosong" class="mt-3 rounded-lg border border-dashed border-slate-300 px-3 py-6 text-center text-sm text-slate-400">
-                    Belum ada barang. Pindai barcode atau cari nama barang di atas.
-                </p>
+                <div id="info-pindai" class="mt-4 hidden rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800"></div>
+                <div id="hasil" class="mt-3 space-y-2"></div>
 
-                <div id="keranjang" class="mt-3 space-y-2"></div>
-            </div>
-        </div>
+                {{-- =========== Keranjang (dapat dilipat) =========== --}}
+                <section class="mt-4 border-t border-slate-200 pt-4">
+                    <button type="button" id="keranjang-toggle" aria-expanded="false"
+                            class="flex w-full items-center justify-between gap-3 text-left">
+                        <span class="flex items-center gap-2">
+                            <span class="text-base font-semibold text-slate-900">Keranjang</span>
+                            <span id="keranjang-jumlah" class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">0 barang</span>
+                        </span>
+                        <span class="flex items-center gap-1 text-xs font-semibold text-brand-700">
+                            <span id="keranjang-toggle-teks">Lihat detail</span>
+                            <svg id="keranjang-toggle-ikon" class="h-4 w-4 transition-transform duration-200" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                            </svg>
+                        </span>
+                    </button>
 
-        {{-- =========== Kolom kanan: pembayaran, shift, offline, riwayat =========== --}}
-        <div class="space-y-4">
-            <div class="rounded-xl bg-white p-4 shadow">
-                <h2 class="text-base font-semibold text-slate-900">Pembayaran</h2>
+                    <div id="keranjang-detail" class="hidden">
+                        <div class="mt-3 flex items-center justify-end">
+                            <button type="button" id="kosongkan" class="text-xs font-medium text-slate-500 hover:text-red-600">Kosongkan keranjang</button>
+                        </div>
+
+                        <p id="kosong" class="mt-2 rounded-lg border border-dashed border-slate-300 px-3 py-6 text-center text-sm text-slate-400">
+                            Belum ada barang. Pindai barcode atau cari nama barang di atas.
+                        </p>
+
+                        <div id="keranjang" class="mt-3 space-y-2"></div>
+                    </div>
+                </section>
+
+                {{-- =========== Pembayaran =========== --}}
+                <section class="mt-4 border-t border-slate-200 pt-4">
+                    <h2 class="text-base font-semibold text-slate-900">Pembayaran</h2>
 
                 <div class="mt-3 space-y-3">
                     <div>
-                        <label class="block text-xs font-medium text-slate-600">Nama pelanggan</label>
-                        <input id="pelanggan" type="text" placeholder="Umum"
+                        <label class="block text-xs font-medium text-slate-600">Nama transaksi</label>
+                        <input id="pelanggan" type="text"
+                               placeholder="Otomatis terisi setelah scan barcode"
                                class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
+                        <p class="mt-1 text-[11px] text-slate-400">Terisi otomatis dari barang pertama yang dipindai, tetapi tetap bisa Anda ketik/ubah sendiri bila scan bermasalah.</p>
                     </div>
 
                     <div>
@@ -152,7 +139,8 @@
                     </button>
 
                     <p id="pesan" class="text-xs"></p>
-                </div>
+                    </div>
+                </section>
             </div>
 
             {{-- Shift kasir (HF-06) --}}
@@ -161,7 +149,6 @@
 
                 @if ($shift)
                     <dl class="mt-2 space-y-1 text-sm text-slate-600">
-                        <div class="flex justify-between"><dt>Dibuka</dt><dd>{{ $shift->opened_at?->format('d/m/Y H:i') }}</dd></div>
                         <div class="flex justify-between"><dt>Kas awal</dt><dd>Rp {{ number_format((float) $shift->opening_cash, 0, ',', '.') }}</dd></div>
                         <div class="flex justify-between"><dt>Kas sistem</dt><dd>Rp {{ number_format((float) $shift->expected_cash, 0, ',', '.') }}</dd></div>
                     </dl>
@@ -262,7 +249,6 @@
                     @endforelse
                 </div>
             </div>
-        </div>
     </div>
 
     <script>
@@ -1246,6 +1232,7 @@
 
             var keranjang = [];
             var kontrolScannerKasir = null;
+            var pelangganManual = false;
 
             function el(id) {
                 return document.getElementById(id);
@@ -1296,6 +1283,18 @@
             function gambarKeranjang() {
                 var wadah = el('keranjang');
                 wadah.innerHTML = '';
+
+                var totalQty = keranjang.reduce(function (n, item) { return n + Number(item.quantity || 0); }, 0);
+                var ringkas = el('keranjang-jumlah');
+                if (ringkas) {
+                    ringkas.textContent = totalQty + ' barang';
+                }
+
+                // Nama transaksi terisi otomatis dari barang pertama yang dipindai.
+                var namaOtomatis = el('pelanggan');
+                if (namaOtomatis && ! pelangganManual) {
+                    namaOtomatis.value = keranjang.length ? keranjang[0].name : '';
+                }
 
                 if (keranjang.length === 0) {
                     el('kosong').classList.remove('hidden');
@@ -1675,6 +1674,7 @@
 
             function bersihkanForm() {
                 keranjang = [];
+                pelangganManual = false;
                 el('pelanggan').value = '';
                 el('diskon').value = 0;
                 el('bayar').value = 0;
@@ -1814,8 +1814,36 @@
 
             el('diskon').addEventListener('input', hitung);
             el('bayar').addEventListener('input', hitung);
+
+            // Nama transaksi bisa diketik manual bila scan bermasalah. Bila kasir
+            // mengetik sendiri, isian manualnya tidak akan ditimpa pengisian otomatis.
+            el('pelanggan').addEventListener('input', function () {
+                pelangganManual = el('pelanggan').value.trim() !== '';
+            });
             el('simpan').addEventListener('click', simpan);
             el('kosongkan').addEventListener('click', bersihkanForm);
+
+            // Lipat/buka detail keranjang. Secara bawaan keranjang tidak menampilkan
+            // semua barang; klik "Lihat detail" untuk membukanya ke bawah.
+            (function () {
+                var tombolKeranjang = el('keranjang-toggle');
+                var detailKeranjang = el('keranjang-detail');
+                var teksKeranjang = el('keranjang-toggle-teks');
+                var ikonKeranjang = el('keranjang-toggle-ikon');
+
+                if (tombolKeranjang && detailKeranjang) {
+                    tombolKeranjang.addEventListener('click', function () {
+                        var terbuka = detailKeranjang.classList.toggle('hidden') === false;
+                        tombolKeranjang.setAttribute('aria-expanded', terbuka ? 'true' : 'false');
+                        if (teksKeranjang) {
+                            teksKeranjang.textContent = terbuka ? 'Sembunyikan detail' : 'Lihat detail';
+                        }
+                        if (ikonKeranjang) {
+                            ikonKeranjang.classList.toggle('rotate-180', terbuka);
+                        }
+                    });
+                }
+            })();
 
             el('kirim-antrian').addEventListener('click', function () {
                 if (window.PosOffline) {

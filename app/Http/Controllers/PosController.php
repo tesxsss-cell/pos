@@ -32,9 +32,25 @@ class PosController extends Controller
         $user = $request->user();
         abort_if(! $user->branch_id, 403, 'Akun Anda belum ditempatkan pada cabang mana pun.');
 
+        // Shift kasir dibuat otomatis sehingga selalu terbuka. Kasir tetap bisa
+        // menutup shift lewat tombol "Tutup shift"; shift baru akan dibuka lagi
+        // otomatis saat halaman kasir dibuka kembali.
+        $shift = $user->openShift();
+
+        if (! $shift) {
+            $shift = CashierShift::create([
+                'branch_id' => $user->branch_id,
+                'user_id' => $user->id,
+                'opened_at' => now(),
+                'opening_cash' => 0,
+                'expected_cash' => 0,
+                'status' => 'dibuka',
+            ]);
+        }
+
         return view('pos.index', [
             'branch' => $user->branch,
-            'shift' => $user->openShift(),
+            'shift' => $shift,
             'paymentMethods' => PaymentMethod::options(),
             // Hanya peran ini yang boleh mengubah harga master dari halaman kasir.
             'canUpdatePrice' => $user->hasRole('admin', 'pemilik', 'manager_cabang'),
