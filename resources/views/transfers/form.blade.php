@@ -90,16 +90,20 @@
         </tr>
     </template>
 
-    <script>
-        const daftarRequest = @json($requests->mapWithKeys(fn ($r) => [$r->id => [
+    @php
+        $daftarRequest = $requests->mapWithKeys(fn ($r) => [$r->id => [
             'kode' => $r->code,
             'cabang_id' => $r->branch_id,
             'cabang' => $r->branch->name ?? '-',
             'items' => $r->items->map(fn ($i) => [
                 'nama' => $i->product->name ?? '-',
                 'jumlah' => $i->quantity_approved ?? $i->quantity_requested,
-            ]),
-        ]]));
+            ])->values(),
+        ]]);
+    @endphp
+
+    <script>
+        const daftarRequest = @json($daftarRequest);
 
         let indeks = 0;
         const tbody = document.getElementById('baris');
