@@ -37,12 +37,13 @@ return new class extends Migration
         Schema::create('failed_jobs', function (Blueprint $table) {
             $table->id();
             $table->string('uuid')->unique();
-            $table->string('connection');
-            $table->string('queue');
+            $table->string('connection', 50); // Dibatasi ke 50 karakter (200 byte)
+            $table->string('queue', 100);      // Dibatasi ke 100 karakter (400 byte)
             $table->longText('payload');
             $table->longText('exception');
             $table->timestamp('failed_at')->useCurrent();
 
+            // Total composite index: 200 + 400 + 4 = 604 byte (aman di bawah 1000 byte)
             $table->index(['connection', 'queue', 'failed_at']);
         });
     }
