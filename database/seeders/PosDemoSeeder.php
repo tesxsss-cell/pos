@@ -19,7 +19,7 @@ class PosDemoSeeder extends Seeder
         // Aman dijalankan ulang: tidak mereset akun, stok, atau transaksi yang sudah ada.
         $shop = Branch::query()->sole();
         foreach ([['Pengelola', 'pengelola@pos.test', 'pengelola'], ['Kasir Satu', 'kasir1@pos.test', 'kasir'], ['Kasir Dua', 'kasir2@pos.test', 'kasir']] as [$name,$email,$role]) {
-            User::firstOrCreate(['email' => $email], ['name' => $name, 'password' => 'DemoKopdes2026!', 'role' => $role, 'branch_id' => $shop->id, 'is_active' => true]);
+            User::firstOrCreate(['email' => $email], ['name' => $name, 'password' => 'password', 'role' => $role, 'branch_id' => $shop->id, 'is_active' => true]);
         }
         $manager = User::where('email', 'pengelola@pos.test')->firstOrFail();
         $category = Category::firstOrCreate(['code' => 'SEMBAKO'], ['name' => 'Sembako', 'is_active' => true]);
@@ -57,7 +57,7 @@ class PosDemoSeeder extends Seeder
                 $service->post($purchase, $manager->id);
             });
         }
-        $this->command?->info('Demo: pengelola@pos.test, kasir1@pos.test, kasir2@pos.test | Sandi: DemoKopdes2026! (ganti sebelum digunakan).');
+        $this->command?->info('Demo: pengelola@pos.test, kasir1@pos.test, kasir2@pos.test | Sandi: password (ganti sebelum digunakan).');
     }
 }
 
