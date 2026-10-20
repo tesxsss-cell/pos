@@ -64,4 +64,3 @@ class PosDemoSeeder extends Seeder
 
 
 
-

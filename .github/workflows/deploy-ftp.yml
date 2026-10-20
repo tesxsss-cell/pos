@@ -129,10 +129,13 @@ jobs:
             echo "Aplikasi Laravel ditemukan di: $APP_DIR"
             cd "$APP_DIR"
 
-            # 1. Bersihkan cache konfigurasi lama
-            php artisan optimize:clear
+            # 1. Bersihkan cache bootstrap tanpa menyentuh tabel database
+            php artisan config:clear
+            php artisan route:clear
+            php artisan view:clear
+            php artisan event:clear
 
-            # 2. Percabangan eksekusi migration
+            # 2. Jalankan migrasi sesuai status perubahan file
             HAS_DB_CHANGES="${{ steps.changed_db_files.outputs.any_changed }}"
 
             if [ "$HAS_DB_CHANGES" = "true" ]; then
