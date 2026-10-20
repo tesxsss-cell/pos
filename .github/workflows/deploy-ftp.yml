@@ -22,16 +22,6 @@ jobs:
     steps:
       - name: Ambil source terbaru dari GitHub
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Deteksi perubahan file migration dan seeder
-        id: changed_db_files
-        uses: tj-actions/changed-files@v45
-        with:
-          files: |
-            database/migrations/**
-            database/seeders/**
 
       - name: Siapkan Node.js
         uses: actions/setup-node@v4
@@ -51,6 +41,7 @@ jobs:
       - name: Hapus penanda Vite development
         run: rm -f public/hot
 
+      # Mengganti FTPS dengan rsync via SSH (bebas error FIN packet / FTP timeout)
       - name: Sinkronisasi file via rsync (Password SSH)
         run: |
           sudo apt-get update && sudo apt-get install -y sshpass
@@ -91,7 +82,7 @@ jobs:
             --exclude='/tests/' \
             ./ ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_APP_PATH || '/home/clouyogf/public_html/pos' }}
 
-      - name: Periksa dan jalankan migration
+      - name: Periksa dan jalankan migration pending
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -123,30 +114,12 @@ jobs:
             if [ -z "$APP_DIR" ] || [ ! -f "$APP_DIR/artisan" ]; then
               echo "ERROR: Folder aplikasi Laravel tidak ditemukan."
               echo "Isi GitHub Secret SSH_APP_PATH dengan path folder yang berisi file artisan."
+              echo "Contoh: /home/clouyogf/public_html/pos"
               exit 1
             fi
 
             echo "Aplikasi Laravel ditemukan di: $APP_DIR"
             cd "$APP_DIR"
 
-            # 1. Bersihkan cache bootstrap tanpa menyentuh tabel database
-            php artisan config:clear
-            php artisan route:clear
-            php artisan view:clear
-            php artisan event:clear
-
-            # 2. Jalankan migrasi sesuai status perubahan file
-            HAS_DB_CHANGES="${{ steps.changed_db_files.outputs.any_changed }}"
-
-            if [ "$HAS_DB_CHANGES" = "true" ]; then
-              echo "Perubahan schema/seeder terdeteksi. Menjalankan migrate:fresh --seed..."
-              php artisan migrate:fresh --seed --force --no-interaction
-            else
-              echo "Tidak ada perubahan schema/seeder. Menjalankan migrate standar..."
-              php artisan migrate --force --no-interaction
-            fi
-
-            # 3. Cache konfigurasi, route, dan view untuk performa produksi
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
+            php artisan migrate --force --no-interaction
+            php artisan optimize:clear
