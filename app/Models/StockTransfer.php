@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class StockTransfer extends Model
 {
     protected $fillable = [
-        'code', 'from_branch_id', 'to_branch_id', 'stock_request_id', 'status',
+        'code', 'from_branch_id', 'to_branch_id', 'status',
         'total_cost', 'note', 'shipped_by', 'shipped_at', 'received_by', 'received_at',
     ];
 
@@ -34,11 +34,6 @@ class StockTransfer extends Model
     public function toBranch(): BelongsTo
     {
         return $this->belongsTo(Branch::class, 'to_branch_id');
-    }
-
-    public function stockRequest(): BelongsTo
-    {
-        return $this->belongsTo(StockRequest::class);
     }
 
     public function shipper(): BelongsTo

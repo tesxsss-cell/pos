@@ -36,7 +36,7 @@ class AuthController extends Controller
             Auth::logout();
 
             throw ValidationException::withMessages([
-                'email' => 'Akun Anda sedang tidak aktif. Hubungi admin.',
+                'email' => 'Akun Anda sedang tidak aktif. Hubungi Pengelola.',
             ]);
         }
 

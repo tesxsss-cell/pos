@@ -8,12 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Stock extends Model
 {
-    protected $fillable = ['product_id', 'branch_id', 'quantity', 'min_stock'];
+    protected $fillable = ['product_id', 'branch_id', 'quantity', 'min_stock', 'avg_cost'];
 
     /** @return array<string, string> */
     protected function casts(): array
     {
-        return ['quantity' => 'integer', 'min_stock' => 'integer'];
+        return ['avg_cost' => 'decimal:4', 'quantity' => 'integer', 'min_stock' => 'integer'];
     }
 
     public function product(): BelongsTo

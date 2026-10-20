@@ -14,40 +14,40 @@
 
             <div class="grid gap-4 sm:grid-cols-3">
                 <div>
-                    <label class="block text-sm font-medium text-slate-700">Kode pemasok</label>
-                    <input name="code" value="{{ old('code', $supplier->code) }}" placeholder="SUP-001"
+                    <label class="block text-sm font-medium text-slate-700" for="field-1">Kode pemasok</label>
+<input id="field-1" name="code" value="{{ old('code', $supplier->code) }}" placeholder="SUP-001"
                            class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2">
                     <p class="mt-1 text-xs text-slate-400">Kosongkan untuk otomatis.</p>
                 </div>
                 <div class="sm:col-span-2">
-                    <label class="block text-sm font-medium text-slate-700">Nama pemasok</label>
-                    <input name="name" value="{{ old('name', $supplier->name) }}" required
+                    <label class="block text-sm font-medium text-slate-700" for="field-2">Nama pemasok</label>
+<input id="field-2" name="name" value="{{ old('name', $supplier->name) }}" required
                            class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2">
                 </div>
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
-                    <label class="block text-sm font-medium text-slate-700">Nama kontak</label>
-                    <input name="contact_name" value="{{ old('contact_name', $supplier->contact_name) }}"
+                    <label class="block text-sm font-medium text-slate-700" for="field-3">Nama kontak</label>
+<input id="field-3" name="contact_name" value="{{ old('contact_name', $supplier->contact_name) }}"
                            class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-700">Telepon</label>
-                    <input name="phone" value="{{ old('phone', $supplier->phone) }}"
+                    <label class="block text-sm font-medium text-slate-700" for="field-4">Telepon</label>
+<input id="field-4" name="phone" value="{{ old('phone', $supplier->phone) }}"
                            class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2">
                 </div>
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-slate-700">Email</label>
-                <input name="email" type="email" value="{{ old('email', $supplier->email) }}"
+                <label class="block text-sm font-medium text-slate-700" for="field-5">Email</label>
+<input id="field-5" name="email" type="email" value="{{ old('email', $supplier->email) }}"
                        class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2">
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-slate-700">Alamat</label>
-                <textarea name="address" rows="3" class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2">{{ old('address', $supplier->address) }}</textarea>
+                <label class="block text-sm font-medium text-slate-700" for="field-6">Alamat</label>
+<textarea id="field-6" name="address" rows="3" class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2">{{ old('address', $supplier->address) }}</textarea>
             </div>
 
             <label class="flex items-center gap-2 text-sm text-slate-700">

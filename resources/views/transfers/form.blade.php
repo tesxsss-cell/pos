@@ -8,19 +8,7 @@
 
         <div class="rounded-xl bg-white p-6 shadow">
             <h1 class="text-lg font-semibold text-slate-900">Dokumen mutasi stok</h1>
-            <p class="text-xs text-slate-500">Pilih request stok yang sudah disetujui, atau susun daftar barang secara manual.</p>
-
-            <div class="mt-4">
-                <label class="block text-sm font-medium text-slate-700">Dasar dokumen</label>
-                <select name="stock_request_id" id="request" class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2">
-                    <option value="">Manual (tanpa request stok)</option>
-                    @foreach ($requests as $stockRequest)
-                        <option value="{{ $stockRequest->id }}">
-                            {{ $stockRequest->code }} &middot; {{ $stockRequest->branch->name ?? '-' }} ({{ $stockRequest->items->count() }} item)
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+            <p class="text-xs text-slate-500">Susun pengiriman dari gudang utama ke toko unit koperasi.</p>
 
             <div class="mt-4 grid gap-4 sm:grid-cols-2">
                 <div>
@@ -35,7 +23,7 @@
                     <label class="block text-sm font-medium text-slate-700">Kirim ke</label>
                     <select name="to_branch_id" id="tujuan" required class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2">
                         @foreach ($branches as $branch)
-                            <option value="{{ $branch->id }}" @selected(old('to_branch_id') == $branch->id)>{{ $branch->name }}</option>
+                            <option value="{{ $branch->id }}" @selected(old('to_branch_id', request('branch_id')) == $branch->id)>{{ $branch->name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -64,7 +52,6 @@
                 <tbody id="baris" class="divide-y divide-slate-100"></tbody>
             </table>
 
-            <p id="info-request" class="mt-3 hidden rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-600"></p>
         </div>
 
         <div class="flex items-center gap-3">
@@ -90,49 +77,15 @@
         </tr>
     </template>
 
-    @php
-        $daftarRequest = $requests->mapWithKeys(fn ($r) => [$r->id => [
-            'kode' => $r->code,
-            'cabang_id' => $r->branch_id,
-            'cabang' => $r->branch->name ?? '-',
-            'items' => $r->items->map(fn ($i) => [
-                'nama' => $i->product->name ?? '-',
-                'jumlah' => $i->quantity_approved ?? $i->quantity_requested,
-            ])->values(),
-        ]]);
-    @endphp
-
     <script>
-        const daftarRequest = @json($daftarRequest);
-
         let indeks = 0;
         const tbody = document.getElementById('baris');
-        const info = document.getElementById('info-request');
 
         function tambahBaris() {
             tbody.insertAdjacentHTML('beforeend', document.getElementById('template-baris').innerHTML.replaceAll('__i__', indeks++));
         }
 
-        function terapkanRequest() {
-            const id = document.getElementById('request').value;
-            const data = daftarRequest[id];
-
-            if (! data) {
-                info.classList.add('hidden');
-                tbody.closest('#kotak-manual').querySelector('#tambah-baris').disabled = false;
-                tbody.querySelectorAll('select, input').forEach((f) => f.disabled = false);
-                return;
-            }
-
-            document.getElementById('tujuan').value = data.cabang_id;
-            info.textContent = 'Jumlah barang diambil otomatis dari ' + data.kode + ' untuk ' + data.cabang + ': '
-                + data.items.map((i) => i.nama + ' (' + i.jumlah + ')').join(', ');
-            info.classList.remove('hidden');
-            tbody.innerHTML = '';
-        }
-
         document.getElementById('tambah-baris').addEventListener('click', tambahBaris);
-        document.getElementById('request').addEventListener('change', terapkanRequest);
         tbody.addEventListener('click', (event) => {
             if (event.target.dataset.hapus !== undefined) {
                 event.target.closest('tr').remove();
@@ -140,5 +93,10 @@
         });
 
         tambahBaris();
+        const produkAwal = @json(request('product_id'));
+        if (produkAwal) {
+            tbody.querySelector('select').value = produkAwal;
+            tbody.querySelector('input').value = @json(request('quantity', 1));
+        }
     </script>
 @endsection

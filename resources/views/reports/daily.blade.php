@@ -3,26 +3,19 @@
 @section('title', 'Laporan Penjualan Harian')
 
 @section('content')
+    <button type="button" onclick="window.print()" class="btn-primary mb-4 no-print">Cetak laporan</button>
     <h1 class="mb-4 text-lg font-semibold text-slate-900">Laporan Penjualan Harian</h1>
 
     <form method="GET" class="mb-4 flex flex-wrap items-end gap-3 rounded-xl bg-white p-4 shadow">
         <div>
-            <label class="block text-xs font-medium text-slate-500">Dari tanggal</label>
-            <input name="dari" type="date" value="{{ $from }}" class="mt-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm">
+            <label class="block text-xs font-medium text-slate-500" for="field-1">Dari tanggal</label>
+<input id="field-1" name="dari" type="date" value="{{ $from }}" class="mt-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm">
         </div>
         <div>
-            <label class="block text-xs font-medium text-slate-500">Sampai tanggal</label>
-            <input name="sampai" type="date" value="{{ $to }}" class="mt-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm">
+            <label class="block text-xs font-medium text-slate-500" for="field-2">Sampai tanggal</label>
+<input id="field-2" name="sampai" type="date" value="{{ $to }}" class="mt-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm">
         </div>
-        <div>
-            <label class="block text-xs font-medium text-slate-500">Lokasi</label>
-            <select name="cabang" class="mt-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm">
-                <option value="">Semua lokasi</option>
-                @foreach ($branches as $branch)
-                    <option value="{{ $branch->id }}" @selected($branchId === $branch->id)>{{ $branch->name }}</option>
-                @endforeach
-            </select>
-        </div>
+        
         <button class="rounded-md bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-medium text-white">Terapkan</button>
         <a href="{{ route('reports.monthly') }}" class="text-sm text-slate-600 hover:underline">Lihat laporan bulanan</a>
     </form>
@@ -43,18 +36,19 @@
 
     <div class="grid gap-4 lg:grid-cols-3">
         <div class="lg:col-span-2 overflow-x-auto rounded-xl bg-white shadow">
-            <table class="w-full text-sm">
+            @php($tableRows=\App\Support\TablePage::make($series))
+<table data-server-table class="w-full text-sm">
                 <thead class="bg-slate-50 text-left text-xs uppercase text-slate-500">
                     <tr>
                         <th class="px-4 py-3">Tanggal</th>
                         <th class="px-4 py-3 text-right">Transaksi</th>
                         <th class="px-4 py-3 text-right">Penjualan</th>
-                        <th class="px-4 py-3 text-right">HPP (FIFO)</th>
+                        <th class="px-4 py-3 text-right">HPP (rata-rata bergerak)</th>
                         <th class="px-4 py-3 text-right">Laba kotor</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
-                    @forelse ($series as $row)
+                    @forelse ($tableRows as $row)
                         <tr>
                             <td class="px-4 py-3">{{ \Illuminate\Support\Carbon::parse($row->tanggal)->translatedFormat('d M Y') }}</td>
                             <td class="px-4 py-3 text-right">{{ $row->transaksi }}</td>
@@ -67,6 +61,7 @@
                     @endforelse
                 </tbody>
             </table>
+{{ $tableRows->links() }}
         </div>
 
         <div class="rounded-xl bg-white p-4 shadow">

@@ -11,7 +11,7 @@
         <div class="flex items-center gap-2">
             @if ($purchase->isDraft())
                 <form method="POST" action="{{ route('purchases.post', $purchase) }}"
-                      onsubmit="return confirm('Posting dokumen ini? Stok akan bertambah dan batch FIFO terbentuk.')">
+                      onsubmit="return confirm('Posting dokumen ini? Stok akan bertambah dan HPP rata-rata terbentuk.')">
                     @csrf
                     <button class="rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800">Posting ke stok</button>
                 </form>

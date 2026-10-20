@@ -13,7 +13,7 @@ use RuntimeException;
 
 /**
  * HF-03 Penerimaan barang dari pemasok.
- * Saat dokumen diposting, tiap baris membentuk lapisan FIFO baru di gudang.
+ * Penerimaan yang diposting memperbarui HPP rata-rata di lokasi penerimaan.
  */
 class PurchaseService
 {
@@ -58,7 +58,7 @@ class PurchaseService
         });
     }
 
-    /** Memposting dokumen: stok bertambah dan lapisan FIFO terbentuk. */
+    /** Memposting dokumen: stok bertambah dan biaya rata-rata bergerak terbentuk. */
     public function post(Purchase $purchase, int $userId): Purchase
     {
         if (! $purchase->isDraft()) {
@@ -66,6 +66,10 @@ class PurchaseService
         }
 
         return DB::transaction(function () use ($purchase, $userId) {
+            $purchase = Purchase::whereKey($purchase->id)->lockForUpdate()->firstOrFail();
+            if (! $purchase->isDraft()) {
+                throw new RuntimeException('Dokumen telah diposting.');
+            }
             $receivedAt = Carbon::parse($purchase->purchase_date)->setTimeFrom(now());
 
             foreach ($purchase->items as $item) {
@@ -105,7 +109,7 @@ class PurchaseService
     /** Harga beli terakhir sebagai saran pengisian form. */
     public function lastUnitCost(Product $product): ?float
     {
-        $value = $product->inventoryLayers()->latest('received_at')->value('unit_cost');
+        $value = $product->stocks()->where('quantity', '>', 0)->orderByDesc('updated_at')->value('avg_cost');
 
         return $value !== null ? (float) $value : null;
     }

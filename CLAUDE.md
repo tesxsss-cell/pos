@@ -1,3 +1,5 @@
+> Edisi aktif: satu toko, peran Pengelola/Kasir, FULL ONLINE, UI hijau–putih. Rujuk README.md dan docs/PERUBAHAN.md. Catatan lama di bawah dipertahankan sebagai riwayat dan mungkin tidak berlaku.
+
 <laravel-boost-guidelines>
 === foundation rules ===
 

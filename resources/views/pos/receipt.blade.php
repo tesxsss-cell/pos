@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>Struk {{ $sale->invoice_no }}</title>
     <style>
-        body { font-family: 'Courier New', monospace; font-size: 12px; margin: 0; padding: 12px; width: 300px; }
+        body { font-family: 'Courier New', monospace; font-size: 12px; margin: 0; padding: 2mm; width: 50mm; box-sizing: border-box; overflow-wrap: anywhere; }
         h1 { font-size: 14px; margin: 0 0 2px; text-align: center; }
         p, td, th { font-size: 12px; }
         table { width: 100%; border-collapse: collapse; }
@@ -12,10 +12,12 @@
         .right { text-align: right; }
         .line { border-top: 1px dashed #000; margin: 6px 0; }
         .muted { color: #444; }
-        @media print { .no-print { display: none; } }
+        @page { size: 58mm auto; margin: 3mm; }
+        @media print { .no-print { display: none; } body { width: 50mm; margin: 0; } }
     </style>
 </head>
 <body>
+    @if(!$sale->isCompleted())<p class="center"><strong>TRANSAKSI DIBATALKAN</strong><br>{{ $sale->void_reason ?? $sale->note }}</p>@endif
     <h1>{{ $sale->branch->name }}</h1>
     <p class="center muted">{{ $sale->branch->address ?? '-' }}<br>{{ $sale->branch->phone }}</p>
     <div class="line"></div>

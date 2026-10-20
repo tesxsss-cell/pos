@@ -2,134 +2,83 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\UserRole;
-use App\Models\Branch;
 use App\Models\User;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
-use Illuminate\View\View;
 
-/**
- * HF-01 Kelola akun.
- * - Pemilik: boleh membuat/mengubah akun admin, manager cabang, dan kasir.
- * - Admin: hanya boleh mengelola akun manager cabang dan kasir.
- */
 class UserController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request)
     {
-        return view('users.index', [
-            'users' => User::query()
-                ->with('branch')
-                ->when($request->filled('q'), fn ($q) => $q->where('name', 'like', '%'.$request->string('q')->toString().'%'))
-                ->orderBy('name')
-                ->paginate(20)
-                ->withQueryString(),
-            'roles' => UserRole::options(),
-        ]);
+        return view('users.index', ['users' => User::where('branch_id', $request->user()->branch_id)->when($request->filled('q'), fn ($q) => $q->where('name', 'like', '%'.$request->string('q')->toString().'%'))->orderBy('name')->paginate(10)->withQueryString(), 'roles' => ['pengelola' => 'Pengelola', 'kasir' => 'Kasir']]);
     }
 
-    public function create(Request $request): View
+    public function create(Request $request)
     {
-        return view('users.form', [
-            'user' => new User(['is_active' => true]),
-            'roles' => $this->assignableRoles($request->user()),
-            'branches' => Branch::query()->active()->orderBy('name')->get(),
-        ]);
+        return view('users.form', ['user' => new User(['is_active' => true, 'role' => 'kasir']), 'roles' => ['kasir' => 'Kasir']]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request)
     {
         $data = $this->validated($request);
-        $data['password'] = Hash::make($data['password']);
-
+        $data['role'] = 'kasir';
+        $data['branch_id'] = $request->user()->branch_id;
         User::create($data);
 
-        return redirect()->route('users.index')->with('status', 'Akun baru berhasil dibuat.');
+        return redirect()->route('users.index')->with('status', 'Akun kasir dibuat.');
     }
 
-    public function edit(Request $request, User $user): View
+    public function edit(Request $request, User $user)
     {
-        $this->guardTarget($request, $user);
+        $this->guard($request, $user);
 
-        return view('users.form', [
-            'user' => $user,
-            'roles' => $this->assignableRoles($request->user()),
-            'branches' => Branch::query()->active()->orderBy('name')->get(),
-        ]);
+        return view('users.form', ['user' => $user, 'roles' => [$user->role->value => $user->role->label()]]);
     }
 
-    public function update(Request $request, User $user): RedirectResponse
+    public function update(Request $request, User $user)
     {
-        $this->guardTarget($request, $user);
-
+        $this->guard($request, $user);
         $data = $this->validated($request, $user);
-
         if (empty($data['password'])) {
             unset($data['password']);
-        } else {
-            $data['password'] = Hash::make($data['password']);
         }
-
+        if ($user->id === $request->user()->id) {
+            $data['is_active'] = true;
+        }
+        if (! $data['is_active'] && $user->openShift()) {
+            return back()->withErrors(['name' => 'Tutup shift kasir sebelum menonaktifkan akun.']);
+        }
         $user->update($data);
 
         return redirect()->route('users.index')->with('status', 'Akun diperbarui.');
     }
 
-    public function destroy(Request $request, User $user): RedirectResponse
+    public function destroy(Request $request, User $user)
     {
-        $this->guardTarget($request, $user);
-
+        $this->guard($request, $user);
         if ($user->id === $request->user()->id) {
-            return back()->withErrors(['name' => 'Anda tidak dapat menghapus akun sendiri.']);
+            return back()->withErrors(['name' => 'Tidak dapat menonaktifkan akun sendiri.']);
         }
-
-        // Nonaktifkan agar riwayat transaksi kasir tetap terbaca.
+        if ($user->openShift()) {
+            return back()->withErrors(['name' => 'Tutup shift kasir sebelum menonaktifkan akun.']);
+        }
         $user->update(['is_active' => false]);
 
-        return redirect()->route('users.index')->with('status', 'Akun dinonaktifkan.');
+        return redirect()->route('users.index')->with('status', 'Akun dinonaktifkan; riwayat tetap ada.');
     }
 
-    /** @return array<string, string> */
-    private function assignableRoles(User $actor): array
+    private function guard(Request $request, User $user): void
     {
-        $roles = UserRole::options();
-        unset($roles[UserRole::Pemilik->value]);
-
-        if (! $actor->isPemilik()) {
-            unset($roles[UserRole::Admin->value]);
-        }
-
-        return $roles;
+        abort_if($user->branch_id !== $request->user()->branch_id, 403);
+        abort_if($user->isPengelola() && $user->id !== $request->user()->id, 403, 'Pengelola hanya dapat mengubah akun sendiri atau akun kasir.');
     }
 
-    private function guardTarget(Request $request, User $user): void
-    {
-        $actor = $request->user();
-
-        abort_if(
-            ! $actor->isPemilik() && $user->hasRole(UserRole::Pemilik, UserRole::Admin) && $actor->id !== $user->id,
-            403,
-            'Hanya pemilik yang dapat mengelola akun admin.',
-        );
-    }
-
-    /** @return array<string, mixed> */
     private function validated(Request $request, ?User $user = null): array
     {
-        $roles = array_keys($this->assignableRoles($request->user()));
-
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:100'],
-            'email' => ['required', 'email', 'max:150', Rule::unique('users', 'email')->ignore($user?->id)],
-            'role' => ['required', Rule::in($roles)],
-            'branch_id' => ['nullable', 'integer', 'exists:branches,id', Rule::requiredIf(fn () => in_array($request->input('role'), [UserRole::ManagerCabang->value, UserRole::Kasir->value], true))],
-            'phone' => ['nullable', 'string', 'max:30'],
-            'password' => [$user ? 'nullable' : 'required', 'string', 'min:8', 'confirmed'],
-        ]);
-
+        $data = $request->validate(['name' => ['required', 'string', 'max:100'], 'email' => ['required', 'email', 'max:150', Rule::unique('users')->ignore($user?->id)],
+            'phone' => ['nullable', 'string', 'max:25'], 'password' => [$user ? 'nullable' : 'required', 'string', 'min:8', 'confirmed'],
+            'role' => ['sometimes', Rule::in([$user?->role->value ?? 'kasir'])]]);
+        unset($data['role']);
         $data['is_active'] = $request->boolean('is_active');
 
         return $data;

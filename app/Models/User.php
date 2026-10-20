@@ -57,19 +57,9 @@ class User extends Authenticatable
         return false;
     }
 
-    public function isPemilik(): bool
+    public function isPengelola(): bool
     {
-        return $this->hasRole(UserRole::Pemilik);
-    }
-
-    public function isAdmin(): bool
-    {
-        return $this->hasRole(UserRole::Admin);
-    }
-
-    public function isManagerCabang(): bool
-    {
-        return $this->hasRole(UserRole::ManagerCabang);
+        return $this->hasRole(UserRole::Pengelola);
     }
 
     public function isKasir(): bool
@@ -77,16 +67,10 @@ class User extends Authenticatable
         return $this->hasRole(UserRole::Kasir);
     }
 
-    /** Pemilik & admin dapat melihat seluruh cabang, peran lain dibatasi cabangnya. */
-    public function isCentral(): bool
-    {
-        return $this->role->isCentral();
-    }
-
-    /** Cabang yang boleh diakses pengguna ini (null = semua cabang). */
+    /** Semua akun terikat satu toko; tidak ada akses lintas cabang. */
     public function scopedBranchId(): ?int
     {
-        return $this->isCentral() ? null : $this->branch_id;
+        return $this->branch_id;
     }
 
     public function openShift(): ?CashierShift

@@ -6,27 +6,27 @@
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
             <h1 class="text-lg font-semibold text-slate-900">Kelola Akun Pengguna</h1>
-            <p class="text-xs text-slate-500">Pemilik dapat mengelola akun admin; admin mengelola akun manager cabang dan kasir.</p>
+            <p class="text-xs text-slate-500">Pengelola membuat dan mengelola akun kasir. Peran tidak dapat dinaikkan melalui formulir ini.</p>
         </div>
-        <a href="{{ route('users.create') }}" class="rounded-md bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-medium text-white">Tambah akun</a>
+        <a href="{{ route('users.create') }}" class="rounded-md bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-medium text-white">Tambah akun kasir</a>
     </div>
 
     <form method="GET" class="mb-4 flex flex-wrap items-end gap-3 rounded-xl bg-white p-4 shadow">
         <div>
-            <label class="block text-xs font-medium text-slate-500">Cari nama</label>
-            <input name="q" value="{{ request('q') }}" class="mt-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm">
+            <label class="block text-xs font-medium text-slate-500" for="field-1">Cari nama</label>
+<input id="field-1" name="q" value="{{ request('q') }}" class="mt-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm">
         </div>
         <button class="rounded-md bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-medium text-white">Cari</button>
     </form>
 
     <div class="overflow-x-auto rounded-xl bg-white shadow">
-        <table class="w-full text-sm">
+        <table data-server-table class="w-full text-sm">
             <thead class="bg-slate-50 text-left text-xs uppercase text-slate-500">
                 <tr>
                     <th class="px-4 py-3">Nama</th>
                     <th class="px-4 py-3">Email</th>
                     <th class="px-4 py-3">Peran</th>
-                    <th class="px-4 py-3">Penempatan</th>
+                    <th class="px-4 py-3">Toko</th>
                     <th class="px-4 py-3">Status</th>
                     <th class="px-4 py-3"></th>
                 </tr>
@@ -40,7 +40,7 @@
                         </td>
                         <td class="px-4 py-3">{{ $user->email }}</td>
                         <td class="px-4 py-3">{{ $roles[$user->role->value] ?? $user->role->value }}</td>
-                        <td class="px-4 py-3">{{ $user->branch->name ?? 'Pusat' }}</td>
+                        <td class="px-4 py-3">{{ $user->branch->name ?? '-' }}</td>
                         <td class="px-4 py-3">
                             @if ($user->is_active)
                                 <span class="rounded bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">aktif</span>

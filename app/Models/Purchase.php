@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-// HF-03 Penerimaan barang dari pemasok (pembentuk lapisan FIFO di gudang).
+// HF-03 Penerimaan barang dari pemasok (pembentuk biaya rata-rata bergerak di gudang).
 class Purchase extends Model
 {
     protected $fillable = [

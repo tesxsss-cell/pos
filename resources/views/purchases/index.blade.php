@@ -6,24 +6,16 @@
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
             <h1 class="text-lg font-semibold text-slate-900">Penerimaan Barang dari Pemasok</h1>
-            <p class="text-xs text-slate-500">Setiap dokumen yang diposting membentuk batch harga beli baru (lapisan FIFO).</p>
+            <p class="text-xs text-slate-500">Setiap dokumen yang diposting membentuk penerimaan harga beli baru (biaya rata-rata bergerak).</p>
         </div>
         <a href="{{ route('purchases.create') }}" class="rounded-md bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-medium text-white">Buat penerimaan</a>
     </div>
 
     <form method="GET" class="mb-4 flex flex-wrap items-end gap-3 rounded-xl bg-white p-4 shadow">
+        
         <div>
-            <label class="block text-xs font-medium text-slate-500">Lokasi tujuan</label>
-            <select name="cabang" class="mt-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm">
-                <option value="">Semua lokasi</option>
-                @foreach ($branches as $branch)
-                    <option value="{{ $branch->id }}" @selected(request('cabang') == $branch->id)>{{ $branch->name }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div>
-            <label class="block text-xs font-medium text-slate-500">Status</label>
-            <select name="status" class="mt-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm">
+            <label class="block text-xs font-medium text-slate-500" for="field-1">Status</label>
+<select id="field-1" name="status" class="mt-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm">
                 <option value="">Semua status</option>
                 @foreach (['draft' => 'Draft', 'posted' => 'Sudah diposting', 'cancelled' => 'Dibatalkan'] as $value => $label)
                     <option value="{{ $value }}" @selected(request('status') === $value)>{{ $label }}</option>
@@ -34,7 +26,7 @@
     </form>
 
     <div class="overflow-x-auto rounded-xl bg-white shadow">
-        <table class="w-full text-sm">
+        <table data-server-table class="w-full text-sm">
             <thead class="bg-slate-50 text-left text-xs uppercase text-slate-500">
                 <tr>
                     <th class="px-4 py-3">Kode</th>

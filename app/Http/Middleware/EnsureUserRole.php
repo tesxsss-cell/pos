@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
-// HF-01 Pembatasan menu & aksi sesuai peran: middleware('role:admin,pemilik')
+// HF-01 Pembatasan menu & aksi sesuai peran: middleware('role:pengelola')
 class EnsureUserRole
 {
     public function handle(Request $request, Closure $next, string ...$roles): Response

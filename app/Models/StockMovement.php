@@ -13,7 +13,7 @@ class StockMovement extends Model
 {
     protected $fillable = [
         'product_id', 'branch_id', 'type', 'quantity', 'balance_after',
-        'unit_cost', 'cost_total', 'reference_type', 'reference_id', 'user_id', 'note',
+        'avg_cost_after', 'unit_cost', 'cost_total', 'reference_type', 'reference_id', 'user_id', 'note',
     ];
 
     /** @return array<string, string> */
@@ -23,7 +23,7 @@ class StockMovement extends Model
             'type' => StockMovementType::class,
             'quantity' => 'integer',
             'balance_after' => 'integer',
-            'unit_cost' => 'decimal:2',
+            'avg_cost_after' => 'decimal:4', 'unit_cost' => 'decimal:4',
             'cost_total' => 'decimal:2',
         ];
     }

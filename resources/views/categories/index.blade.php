@@ -9,7 +9,7 @@
     </div>
 
     <div class="overflow-x-auto rounded-xl bg-white shadow">
-        <table class="w-full text-sm">
+        <table data-server-table class="w-full text-sm">
             <thead class="bg-slate-50 text-left text-xs uppercase text-slate-500">
                 <tr>
                     <th class="px-4 py-3">Kode</th>

@@ -13,21 +13,21 @@
             @endif
 
             <div>
-                <label class="block text-sm font-medium text-slate-700">Kode kategori</label>
-                <input name="code" value="{{ old('code', $category->code) }}" placeholder="KAT-MNM"
+                <label class="block text-sm font-medium text-slate-700" for="field-1">Kode kategori</label>
+<input id="field-1" name="code" value="{{ old('code', $category->code) }}" placeholder="KAT-MNM"
                        class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2">
                 <p class="mt-1 text-xs text-slate-400">Kosongkan untuk dibuat otomatis dari nama kategori.</p>
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-slate-700">Nama kategori</label>
-                <input name="name" value="{{ old('name', $category->name) }}" required
+                <label class="block text-sm font-medium text-slate-700" for="field-2">Nama kategori</label>
+<input id="field-2" name="name" value="{{ old('name', $category->name) }}" required
                        class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2">
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-slate-700">Keterangan</label>
-                <textarea name="description" rows="3" class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2">{{ old('description', $category->description) }}</textarea>
+                <label class="block text-sm font-medium text-slate-700" for="field-3">Keterangan</label>
+<textarea id="field-3" name="description" rows="3" class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2">{{ old('description', $category->description) }}</textarea>
             </div>
 
             <label class="flex items-center gap-2 text-sm text-slate-700">

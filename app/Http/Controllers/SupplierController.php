@@ -16,7 +16,7 @@ class SupplierController extends Controller
             'suppliers' => Supplier::query()
                 ->when($request->filled('q'), fn ($q) => $q->where('name', 'like', '%'.$request->string('q')->toString().'%'))
                 ->orderBy('name')
-                ->paginate(20)
+                ->paginate(10)
                 ->withQueryString(),
         ]);
     }
@@ -70,7 +70,7 @@ class SupplierController extends Controller
 
         // Kolom `code` wajib (NOT NULL + unique) sehingga dibuatkan otomatis
         // bila pengguna mengosongkannya.
-        $data['code'] = $data['code'] ?: ($supplier?->code ?: $this->generateCode());
+        $data['code'] = ($data['code'] ?? null) ?: ($supplier?->code ?: $this->generateCode());
         $data['is_active'] = $request->boolean('is_active');
 
         return $data;

@@ -10,14 +10,14 @@
 
     <form method="GET" class="mb-4 flex flex-wrap items-end gap-3 rounded-xl bg-white p-4 shadow">
         <div>
-            <label class="block text-xs font-medium text-slate-500">Cari nama pemasok</label>
-            <input name="q" value="{{ request('q') }}" class="mt-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm">
+            <label class="block text-xs font-medium text-slate-500" for="field-1">Cari nama pemasok</label>
+<input id="field-1" name="q" value="{{ request('q') }}" class="mt-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm">
         </div>
         <button class="rounded-md bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-medium text-white">Cari</button>
     </form>
 
     <div class="overflow-x-auto rounded-xl bg-white shadow">
-        <table class="w-full text-sm">
+        <table data-server-table class="w-full text-sm">
             <thead class="bg-slate-50 text-left text-xs uppercase text-slate-500">
                 <tr>
                     <th class="px-4 py-3">Nama</th>

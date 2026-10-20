@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Branch;
 use App\Models\Product;
+use App\Models\Stock;
 use App\Services\ReportService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -27,6 +27,7 @@ class ReportController extends Controller
 
     public function monthly(Request $request): View
     {
+        $request->validate(['tahun' => ['nullable', 'integer', 'between:2000,2100']]);
         $year = $request->integer('tahun') ?: (int) now()->year;
         $branchId = $this->branchFilter($request);
 
@@ -58,6 +59,7 @@ class ReportController extends Controller
             'branchId' => $branchId,
             'branches' => $this->branchOptions($request),
             'lowStocks' => $this->reports->lowStocks($branchId),
+            'stocks' => Stock::with('product')->whereHas('product')->where('branch_id', $branchId)->orderBy('id')->paginate(10)->withQueryString(),
         ]);
     }
 
@@ -70,12 +72,12 @@ class ReportController extends Controller
             'barang' => ['nullable', 'integer', 'exists:products,id'],
             'cabang' => ['nullable', 'integer', 'exists:branches,id'],
             'dari' => ['nullable', 'date'],
-            'sampai' => ['nullable', 'date'],
+            'sampai' => ['nullable', 'date', 'after_or_equal:dari'],
         ]);
 
         $from = $data['dari'] ?? now()->startOfMonth()->toDateString();
         $to = $data['sampai'] ?? now()->toDateString();
-        $branchId = $user->isCentral() ? ($data['cabang'] ?? null) : $user->branch_id;
+        $branchId = $user->branch_id;
         $productId = $data['barang'] ?? null;
 
         return view('reports.stock-card', [
@@ -87,9 +89,6 @@ class ReportController extends Controller
             'products' => Product::query()->active()->orderBy('name')->get(['id', 'name', 'sku']),
             'movements' => ($productId && $branchId)
                 ? $this->reports->stockCard($productId, $branchId, $from, $to)
-                : collect(),
-            'layers' => ($productId && $branchId)
-                ? $this->reports->fifoLayers($productId, $branchId)
                 : collect(),
         ]);
     }
@@ -107,9 +106,11 @@ class ReportController extends Controller
     /** @return array{0: string, 1: string, 2: int|null} */
     private function filters(Request $request, string $defaultFrom, string $defaultTo): array
     {
+        $data = $request->validate(['dari' => ['nullable', 'date'], 'sampai' => ['nullable', 'date', 'after_or_equal:dari']]);
+
         return [
-            $request->date('dari')?->toDateString() ?? $defaultFrom,
-            $request->date('sampai')?->toDateString() ?? $defaultTo,
+            $data['dari'] ?? $defaultFrom,
+            $data['sampai'] ?? $defaultTo,
             $this->branchFilter($request),
         ];
     }
@@ -118,14 +119,12 @@ class ReportController extends Controller
     {
         $user = $request->user();
 
-        return $user->isCentral() ? ($request->integer('cabang') ?: null) : $user->branch_id;
+        return $user->branch_id;
     }
 
     private function branchOptions(Request $request)
     {
-        return $request->user()->isCentral()
-            ? Branch::query()->active()->orderBy('name')->get()
-            : collect([$request->user()->branch])->filter();
+        return collect();
     }
 
     /** @return array<string, mixed> */

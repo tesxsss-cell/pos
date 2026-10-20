@@ -1,0 +1,7 @@
+
+   INFO  Seeding database.  
+
+  Database\Seeders\PosDemoSeeder ..................................... RUNNING  
+Demo: pengelola@pos.test, kasir1@pos.test, kasir2@pos.test | Sandi: DemoKopdes2026! (ganti sebelum digunakan).
+  Database\Seeders\PosDemoSeeder ................................. 831 ms DONE  
+

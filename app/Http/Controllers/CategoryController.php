@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -13,7 +14,7 @@ class CategoryController extends Controller
     public function index(): View
     {
         return view('categories.index', [
-            'categories' => Category::query()->withCount('products')->orderBy('name')->paginate(20),
+            'categories' => Category::query()->withCount('products')->orderBy('name')->paginate(10),
         ]);
     }
 
@@ -43,7 +44,7 @@ class CategoryController extends Controller
 
     public function destroy(Category $category): RedirectResponse
     {
-        if ($category->products()->exists()) {
+        if (Product::withTrashed()->where('category_id', $category->id)->exists()) {
             return back()->withErrors(['name' => 'Kategori masih dipakai oleh barang lain.']);
         }
 
@@ -63,7 +64,7 @@ class CategoryController extends Controller
 
         // Kolom `code` wajib (NOT NULL + unique) sehingga dibuatkan otomatis
         // bila pengguna mengosongkannya.
-        $data['code'] = $data['code'] ?: ($category?->code ?: $this->generateCode($data['name'], $category));
+        $data['code'] = ($data['code'] ?? null) ?: ($category?->code ?: $this->generateCode($data['name'], $category));
         $data['is_active'] = $request->boolean('is_active');
 
         return $data;

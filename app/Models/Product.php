@@ -14,7 +14,7 @@ class Product extends Model
 
     protected $fillable = [
         'category_id', 'sku', 'barcode', 'name', 'unit',
-        'sell_price', 'min_stock', 'description', 'is_active',
+        'lead_time_days', 'sell_price', 'min_stock', 'description', 'is_active',
     ];
 
     /** @return array<string, string> */
@@ -22,7 +22,7 @@ class Product extends Model
     {
         return [
             'sell_price' => 'decimal:2',
-            'min_stock' => 'integer',
+            'lead_time_days' => 'integer', 'min_stock' => 'integer',
             'is_active' => 'boolean',
         ];
     }
@@ -41,11 +41,6 @@ class Product extends Model
     public function barcodes(): HasMany
     {
         return $this->hasMany(ProductBarcode::class);
-    }
-
-    public function inventoryLayers(): HasMany
-    {
-        return $this->hasMany(InventoryLayer::class);
     }
 
     public function movements(): HasMany

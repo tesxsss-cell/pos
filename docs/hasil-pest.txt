@@ -1,0 +1,130 @@
+PHPUnit 12.5.33 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.4.16
+Configuration: /data/kopdes-green-full/pos/phpunit.xml
+
+
+   PASS  Tests\Unit\ExampleTest
+  ✓ that true is true                                                    0.01s  
+
+   PASS  Tests\Feature\AutoReorderTest
+  ✓ it tidak menyediakan pemesanan restock otomatis                      0.13s  
+
+   PASS  Tests\Feature\ExampleTest
+  ✓ halaman awal mengarahkan pengguna ke dasbor                          0.04s  
+
+   PASS  Tests\Feature\KopdesUpgradeTest
+  ✓ it hanya dua peran pada edisi online                                 0.01s  
+
+   PASS  Tests\Feature\KopdesViewsTest
+  ✓ it menjaga folder tampilan lama tanpa route cabang                   0.01s  
+
+   PASS  Tests\Feature\MovingAverageHppTest
+  ✓ it menghitung rata-rata tertimbang dua penerimaan dan nilai persedi… 0.17s  
+  ✓ it menyimpan HPP baris penjualan serta laba kotor tanpa mengubah ra… 0.03s  
+  ✓ it mengembalikan barang memakai biaya penjualan asli setelah harga…  0.03s  
+  ✓ it mencegah pembatalan berulang                                      0.03s  
+  ✓ it membulatkan rata-rata empat desimal dan HPP dua desimal secara h… 0.03s  
+  ✓ it membulatkan total tepat setengah sen ke atas                      0.03s  
+  ✓ it menolak stok tidak cukup dan membatalkan seluruh transaksi        0.02s  
+
+   PASS  Tests\Feature\OnlineScopeTest
+  ✓ it hanya memiliki dua peran dan tidak mendaftarkan rute fitur yang…  0.02s  
+  ✓ it merender seluruh halaman pengelola dengan satu toko               0.24s  
+  ✓ it mengarahkan kasir ke POS dan tidak membuka shift otomatis         0.04s  
+  ✓ it membatasi akses data induk laporan dan POS sesuai peran           0.04s  
+  ✓ it kasir dapat mencari barcode online dan mencatat transaksi harga…  0.04s  
+  ✓ it retry UUID yang sama tidak menggandakan penjualan stok atau kas   0.04s  
+  ✓ it UUID yang sama tidak boleh dipakai dengan isi transaksi berbeda   0.03s  
+  ✓ it menolak manipulasi harga diskon dan jumlah pecahan                0.03s  
+  ✓ it menolak stok kurang dan rollback seluruh transaksi                0.03s  
+  ✓ it menolak barang nonaktif                                           0.02s  
+  ✓ it pembayaran tunai kurang tidak disimpan                            0.03s  
+  ✓ it pembayaran non tunai harus dikonfirmasi dan tidak menambah kas l… 0.04s  
+  ✓ it shift harus dibuka eksplisit dan satu akun tidak boleh membuka d… 0.03s  
+  ✓ it transaksi wajib menggunakan shift aktif milik kasir sendiri       0.03s  
+  ✓ it tutup shift menghitung selisih dan retry transaksi lama tetap id… 0.04s  
+  ✓ it hanya Pengelola dapat membatalkan transaksi beserta stok dan kas  0.04s  
+  ✓ it pembatalan non tunai tidak mengurangi laci dan laporan mengecual… 0.04s  
+  ✓ it melarang void setelah shift tutup agar rekap tidak berubah diam…  0.04s  
+  ✓ it kasir hanya bisa melihat struk sendiri dan status batal terlihat  0.05s  
+  ✓ it Pengelola membuat kasir tanpa bisa mengeskalasi peran             0.03s  
+  ✓ it akun nonaktif tidak dapat menggunakan sesi lama                   0.04s  
+  ✓ it tidak menonaktifkan akun sendiri atau kasir dengan shift terbuka  0.02s  
+  ✓ it mencatat penerimaan ke satu toko dan posting hanya sekali         0.05s  
+  ✓ it barang baru mempunyai saldo nol dan muncul pada peringatan minim… 0.04s  
+  ✓ it stok positif tidak boleh diarsipkan dan histori tetap tersimpan   0.03s  
+  ✓ it seeder menghasilkan satu Pengelola dua Kasir dan aman dijalankan… 0.06s  
+  ✓ it menolak rentang tanggal laporan yang terbalik                     0.02s  
+  ✓ it menolak harga keranjang yang sudah berubah tanpa mengubah stok    0.03s  
+  ✓ it ID transaksi milik kasir lain tidak membocorkan struk             0.04s  
+  ✓ it endpoint offline lama tidak tersedia dan respons POS tidak boleh… 0.03s  
+
+   PASS  Tests\Feature\PosBarcodeTest
+  ✓ it tidak menyediakan pendaftaran barcode kasir                       0.03s  
+
+  Tests:    43 passed (195 assertions)
+  Duration: 1.90s
+
+Time: 00:01.824, Memory: 56.50 MB
+
+/data/kopdes-green-full/pos/tests/Feature/AutoReorderTest.php
+ ✔ it tidak menyediakan pemesanan restock otomatis
+
+/data/kopdes-green-full/pos/tests/Feature/ExampleTest.php
+ ✔ halaman awal mengarahkan pengguna ke dasbor
+
+/data/kopdes-green-full/pos/tests/Feature/KopdesUpgradeTest.php
+ ✔ it hanya dua peran pada edisi online
+
+/data/kopdes-green-full/pos/tests/Feature/KopdesViewsTest.php
+ ✔ it menjaga folder tampilan lama tanpa route cabang
+
+/data/kopdes-green-full/pos/tests/Feature/MovingAverageHppTest.php
+ ✔ it menghitung rata-rata tertimbang dua penerimaan dan nilai persediaan
+ ✔ it menyimpan HPP baris penjualan serta laba kotor tanpa mengubah rata-rata
+ ✔ it mengembalikan barang memakai biaya penjualan asli setelah harga rata-rata berubah
+ ✔ it mencegah pembatalan berulang
+ ✔ it membulatkan rata-rata empat desimal dan HPP dua desimal secara half-up
+ ✔ it membulatkan total tepat setengah sen ke atas
+ ✔ it menolak stok tidak cukup dan membatalkan seluruh transaksi
+
+/data/kopdes-green-full/pos/tests/Feature/OnlineScopeTest.php
+ ✔ it hanya memiliki dua peran dan tidak mendaftarkan rute fitur yang dihapus
+ ✔ it merender seluruh halaman pengelola dengan satu toko
+ ✔ it mengarahkan kasir ke POS dan tidak membuka shift otomatis
+ ✔ it membatasi akses data induk laporan dan POS sesuai peran
+ ✔ it kasir dapat mencari barcode online dan mencatat transaksi harga server
+ ✔ it retry UUID yang sama tidak menggandakan penjualan stok atau kas
+ ✔ it UUID yang sama tidak boleh dipakai dengan isi transaksi berbeda
+ ✔ it menolak manipulasi harga diskon dan jumlah pecahan
+ ✔ it menolak stok kurang dan rollback seluruh transaksi
+ ✔ it menolak barang nonaktif
+ ✔ it pembayaran tunai kurang tidak disimpan
+ ✔ it pembayaran non tunai harus dikonfirmasi dan tidak menambah kas laci
+ ✔ it shift harus dibuka eksplisit dan satu akun tidak boleh membuka dua kali
+ ✔ it transaksi wajib menggunakan shift aktif milik kasir sendiri
+ ✔ it tutup shift menghitung selisih dan retry transaksi lama tetap idempoten
+ ✔ it hanya Pengelola dapat membatalkan transaksi beserta stok dan kas
+ ✔ it pembatalan non tunai tidak mengurangi laci dan laporan mengecualikan void
+ ✔ it melarang void setelah shift tutup agar rekap tidak berubah diam diam
+ ✔ it kasir hanya bisa melihat struk sendiri dan status batal terlihat
+ ✔ it Pengelola membuat kasir tanpa bisa mengeskalasi peran
+ ✔ it akun nonaktif tidak dapat menggunakan sesi lama
+ ✔ it tidak menonaktifkan akun sendiri atau kasir dengan shift terbuka
+ ✔ it mencatat penerimaan ke satu toko dan posting hanya sekali
+ ✔ it barang baru mempunyai saldo nol dan muncul pada peringatan minimum
+ ✔ it stok positif tidak boleh diarsipkan dan histori tetap tersimpan
+ ✔ it seeder menghasilkan satu Pengelola dua Kasir dan aman dijalankan ulang
+ ✔ it menolak rentang tanggal laporan yang terbalik
+ ✔ it menolak harga keranjang yang sudah berubah tanpa mengubah stok
+ ✔ it ID transaksi milik kasir lain tidak membocorkan struk
+ ✔ it endpoint offline lama tidak tersedia dan respons POS tidak boleh di cache
+
+/data/kopdes-green-full/pos/tests/Feature/PosBarcodeTest.php
+ ✔ it tidak menyediakan pendaftaran barcode kasir
+
+/data/kopdes-green-full/pos/tests/Unit/ExampleTest.php
+ ✔ that true is true
+
+OK (43 tests, 195 assertions)

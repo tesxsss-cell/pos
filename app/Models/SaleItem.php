@@ -4,13 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class SaleItem extends Model
 {
     protected $fillable = [
         'sale_id', 'product_id', 'product_name', 'quantity',
-        'unit_price', 'discount', 'subtotal', 'cogs_total', 'gross_profit',
+        'unit_cost', 'unit_price', 'discount', 'subtotal', 'cogs_total', 'gross_profit',
     ];
 
     /** @return array<string, string> */
@@ -18,7 +17,7 @@ class SaleItem extends Model
     {
         return [
             'quantity' => 'integer',
-            'unit_price' => 'decimal:2',
+            'unit_cost' => 'decimal:4', 'unit_price' => 'decimal:2',
             'discount' => 'decimal:2',
             'subtotal' => 'decimal:2',
             'cogs_total' => 'decimal:2',
@@ -34,11 +33,5 @@ class SaleItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
-    }
-
-    /** Rincian lapisan FIFO yang dipakai baris penjualan ini. */
-    public function consumptions(): MorphMany
-    {
-        return $this->morphMany(InventoryLayerConsumption::class, 'consumer');
     }
 }

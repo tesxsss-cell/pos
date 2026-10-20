@@ -1,7 +1,5 @@
 <?php
 
-test('the application returns a successful response', function () {
-    $response = $this->get('/');
-
-    $response->assertStatus(200);
+test('halaman awal mengarahkan pengguna ke dasbor', function () {
+    $this->get('/')->assertRedirect(route('dashboard'));
 });

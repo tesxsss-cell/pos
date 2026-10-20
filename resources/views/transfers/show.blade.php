@@ -10,9 +10,6 @@
             <h1 class="text-lg font-semibold text-slate-900">Mutasi Stok {{ $transfer->code }}</h1>
             <p class="text-xs text-slate-500">
                 {{ $transfer->fromBranch->name ?? '-' }} &rarr; {{ $transfer->toBranch->name ?? '-' }}
-                @if ($transfer->stockRequest)
-                    &middot; dasar {{ $transfer->stockRequest->code }}
-                @endif
             </p>
         </div>
         <div class="flex items-center gap-3">
@@ -36,12 +33,12 @@
                 @endif
             </div>
 
-            @if ($transfer->isDraft() && $me->isCentral())
+            @if ($transfer->isDraft() && $me->hasRole('pemilik', 'admin', 'manager_cabang'))
                 <form method="POST" action="{{ route('transfers.ship', $transfer) }}" class="rounded-xl bg-white p-4 shadow"
-                      onsubmit="return confirm('Kirim dokumen ini? Stok gudang akan berkurang mengikuti FIFO.')">
+                      onsubmit="return confirm('Kirim dokumen ini? Stok gudang akan berkurang mengikuti rata-rata bergerak.')">
                     @csrf
                     <h2 class="font-semibold text-slate-900">Kirim barang</h2>
-                    <p class="mt-1 text-xs text-slate-500">Stok keluar diambil dari batch termurah/tertua sesuai FIFO.</p>
+                    <p class="mt-1 text-xs text-slate-500">Stok keluar diambil dari penerimaan termurah/tertua sesuai rata-rata bergerak.</p>
                     <button class="mt-3 w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white">Kirim sekarang</button>
                 </form>
             @endif
@@ -57,7 +54,7 @@
                                 <th class="px-4 py-3">Barang</th>
                                 <th class="px-4 py-3 text-right">Dikirim</th>
                                 <th class="px-4 py-3 text-right">Diterima</th>
-                                <th class="px-4 py-3 text-right">HPP batch</th>
+                                <th class="px-4 py-3 text-right">HPP penerimaan</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -66,13 +63,7 @@
                                     <td class="px-4 py-3">
                                         <div class="font-medium">{{ $item->product->name ?? '-' }}</div>
                                         <div class="text-xs text-slate-400">{{ $item->product->sku ?? '' }}</div>
-                                        @if (! empty($item->cost_layers))
-                                            <div class="mt-1 text-xs text-slate-500">
-                                                @foreach ($item->cost_layers as $layer)
-                                                    <div>{{ $layer['quantity'] ?? 0 }} unit @ Rp {{ number_format((float) ($layer['unit_cost'] ?? 0), 0, ',', '.') }}</div>
-                                                @endforeach
-                                            </div>
-                                        @endif
+                                        <div class="text-xs text-slate-500">HPP per unit: Rp {{ number_format((float) $item->unit_cost, 4, ',', '.') }}</div>
                                     </td>
                                     <td class="px-4 py-3 text-right">{{ $item->quantity_sent }} {{ $item->product->unit ?? '' }}</td>
                                     <td class="px-4 py-3 text-right">
@@ -94,7 +85,7 @@
                 @if ($transfer->isShipped())
                     <div class="mt-3 rounded-xl bg-white p-4 shadow">
                         <h2 class="font-semibold text-slate-900">Konfirmasi penerimaan di cabang</h2>
-                        <p class="mt-1 text-xs text-slate-500">Isi jumlah yang benar-benar diterima. Batch FIFO dibentuk ulang di cabang dengan harga pokok yang sama.</p>
+                        <p class="mt-1 text-xs text-slate-500">Isi jumlah yang benar-benar diterima. Penerimaan menambah persediaan toko menggunakan harga pokok yang sama.</p>
                         <button class="mt-3 rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800">Terima barang</button>
                     </div>
                 @endif

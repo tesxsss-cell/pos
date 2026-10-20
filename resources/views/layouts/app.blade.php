@@ -1,185 +1,67 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="theme-color" content="#1d4ed8">
-    <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
-    <title>@yield('title', 'POS Multi-Cabang') &middot; {{ config('app.name') }}</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="csrf-token" content="{{ csrf_token() }}"><meta name="theme-color" content="#146c43">
+<title>@yield('title','POS Koperasi Desa') · {{ config('app.name') }}</title>
+@vite(['resources/css/app.css','resources/js/app.js'])
+<link rel="stylesheet" href="{{ asset('css/responsive-tables.css') }}">
+<link rel="stylesheet" href="{{ asset('css/cashier-pages.css') }}">
 </head>
-{{-- SRS Look & Feel: warna dominan biru, aksen putih & abu-abu. --}}
-<body class="min-h-screen bg-slate-100 text-slate-800">
+<body class="kopdes-app">
+<a class="skip-link" href="#main-content">Lewati ke konten</a>
 @auth
-    @php($me = auth()->user())
-    @php($nav = fn ($active) => 'app-sidebar-link'.($active ? ' app-sidebar-link-active' : ''))
-
-    <div class="flex min-h-screen">
-        {{-- ============ SRS Look & Feel #3: Sidebar kiri ============ --}}
-        <aside id="app-sidebar"
-               class="fixed inset-y-0 left-0 z-40 flex w-64 -translate-x-full flex-col bg-brand-700 text-white transition-transform lg:static lg:translate-x-0">
-            <div class="flex items-center justify-between px-4 py-4">
-                <a href="{{ route('dashboard') }}" class="text-base font-semibold tracking-tight">POS Multi-Cabang FIFO</a>
-                <button type="button" data-sidebar-close class="rounded-md p-1 text-brand-100 hover:bg-brand-800 lg:hidden" aria-label="Tutup menu">&times;</button>
-            </div>
-
-            <div class="mx-3 mb-2 rounded-lg bg-brand-800/60 px-3 py-2">
-                <p class="text-sm font-medium">{{ $me->name }}</p>
-                <p class="text-xs text-brand-200">
-                    {{ $me->role->label() }}@if ($me->branch) &middot; {{ $me->branch->name }} @endif
-                </p>
-            </div>
-
-            {{-- SRS Look & Feel #4: menu ditampilkan sesuai role pengguna. --}}
-            <nav class="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
-                <a class="{{ $nav(request()->routeIs('dashboard')) }}" href="{{ route('dashboard') }}">Dasbor</a>
-
-                @if ($me->hasRole('kasir', 'admin', 'manager_cabang'))
-                    <p class="app-sidebar-heading">Penjualan</p>
-                    <a class="{{ $nav(request()->routeIs('pos.index')) }}" href="{{ route('pos.index') }}">Kasir</a>
-                    <a class="{{ $nav(request()->routeIs('pos.products')) }}" href="{{ route('pos.products') }}">Daftar Produk</a>
-                @endif
-
-                @if ($me->isCentral())
-                    <p class="app-sidebar-heading">Data Induk</p>
-                    <a class="{{ $nav(request()->routeIs('products.*')) }}" href="{{ route('products.index') }}">Barang</a>
-                    <a class="{{ $nav(request()->routeIs('categories.*')) }}" href="{{ route('categories.index') }}">Kategori</a>
-                    <a class="{{ $nav(request()->routeIs('suppliers.*')) }}" href="{{ route('suppliers.index') }}">Pemasok</a>
-                    <a class="{{ $nav(request()->routeIs('branches.*')) }}" href="{{ route('branches.index') }}">Cabang</a>
-                    <a class="{{ $nav(request()->routeIs('users.*')) }}" href="{{ route('users.index') }}">Akun</a>
-                    <a class="{{ $nav(request()->routeIs('purchases.*')) }}" href="{{ route('purchases.index') }}">Penerimaan</a>
-                @endif
-
-                @if ($me->hasRole('manager_cabang', 'admin', 'pemilik'))
-                    <p class="app-sidebar-heading">Persediaan &amp; Laporan</p>
-                    <a class="{{ $nav(request()->routeIs('stock-requests.*')) }}" href="{{ route('stock-requests.index') }}">Request Stok</a>
-                    <a class="{{ $nav(request()->routeIs('transfers.*')) }}" href="{{ route('transfers.index') }}">Mutasi Stok</a>
-                    <a class="{{ $nav(request()->routeIs('reports.stock')) }}" href="{{ route('reports.stock') }}">Laporan Stok</a>
-                    <a class="{{ $nav(request()->routeIs('reports.daily')) }}" href="{{ route('reports.daily') }}">Laporan Harian</a>
-                @endif
-            </nav>
-
-            <form method="POST" action="{{ route('logout') }}" class="border-t border-brand-800 p-3">
-                @csrf
-                <button class="w-full rounded-lg bg-brand-800 px-3 py-2 text-sm font-medium text-white hover:bg-brand-900">Keluar</button>
-            </form>
-        </aside>
-
-        {{-- Lapisan gelap saat sidebar terbuka di layar kecil. --}}
-        <div id="app-sidebar-overlay" class="fixed inset-0 z-30 hidden bg-slate-900/40 lg:hidden"></div>
-
-        {{-- ============ Area konten kanan ============ --}}
-        <div class="flex min-h-screen flex-1 flex-col">
-            <header class="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3">
-                <div class="flex items-center gap-2">
-                    <button type="button" data-sidebar-open class="rounded-md border border-slate-300 p-2 text-slate-600 hover:bg-slate-100 lg:hidden" aria-label="Buka menu">
-                        <span class="block h-0.5 w-5 bg-current"></span>
-                        <span class="mt-1 block h-0.5 w-5 bg-current"></span>
-                        <span class="mt-1 block h-0.5 w-5 bg-current"></span>
-                    </button>
-                    <h1 class="text-base font-semibold text-slate-900">@yield('title', 'POS Multi-Cabang')</h1>
-                </div>
-                <span id="lencana-jaringan" class="hidden rounded-full px-3 py-1 text-xs font-medium"></span>
-            </header>
-
-            <main class="mx-auto w-full max-w-7xl flex-1 px-4 py-6">
-                @if (session('status'))
-                    <div class="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-                        {{ session('status') }}
-                    </div>
-                @endif
-
-                @if ($errors->any())
-                    <div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-                        <ul class="list-inside list-disc space-y-1">
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
-
-                @yield('content')
-            </main>
-        </div>
-    </div>
+@php($me=auth()->user())
+<div class="app-shell">
+<aside id="app-sidebar" class="app-sidebar no-print" aria-label="Menu utama">
+<div class="sidebar-brand"><a href="{{ route('dashboard') }}" class="brand-lockup"><span class="brand-mark"><x-icon name="leaf"/></span><span>Kopdes<span class="brand-subtitle">Point of Sale</span></span></a><button type="button" data-sidebar-close class="icon-button drawer-close" aria-label="Tutup menu"><x-icon name="x"/></button></div>
+<div class="shop-label"><span class="status-dot"></span><span>{{ $me->branch->name }}</span></div>
+<nav class="sidebar-navigation">
+@if($me->isKasir())
+<p class="nav-heading">Ruang kasir</p>
+@foreach([['pos.index','Kasir & shift','calculator'],['pos.products','Daftarkan barcode','box'],['pos.history','Riwayat transaksi','receipt']] as [$target,$label,$icon])
+<a class="nav-link {{ request()->routeIs($target)?'is-active':'' }}" href="{{ route($target) }}" @if(request()->routeIs($target))aria-current="page"@endif><x-icon name="{{ $icon }}"/><span>{{ $label }}</span></a>
+@endforeach
 @else
-    <main class="mx-auto max-w-7xl px-4 py-6">
-        @if (session('status'))
-            <div class="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-                {{ session('status') }}
-            </div>
-        @endif
-        @yield('content')
-    </main>
+@foreach([
+['Ringkasan',[['dashboard','Dasbor','home'],['sales.index','Penjualan','receipt']]],
+['Kelola usaha',[['products.index','Barang','box'],['categories.index','Kategori','layers'],['suppliers.index','Pemasok','truck'],['purchases.index','Penerimaan barang','clipboard'],['users.index','Akun kasir','users']]],
+['Laporan',[['reports.daily','Penjualan harian','chart'],['reports.monthly','Penjualan bulanan','chart'],['reports.profit','Laba kotor','calculator'],['reports.stock','Persediaan','box'],['reports.stock-card','Kartu stok','clipboard'],['reports.shift','Rekap shift','clock']]]
+] as [$heading,$items])
+<p class="nav-heading">{{ $heading }}</p>
+@foreach($items as [$target,$label,$icon])
+@php($active=request()->routeIs($target)||($target==='products.index'&&request()->routeIs('products.*'))||($target==='purchases.index'&&request()->routeIs('purchases.*'))||($target==='users.index'&&request()->routeIs('users.*'))||($target==='categories.index'&&request()->routeIs('categories.*'))||($target==='suppliers.index'&&request()->routeIs('suppliers.*')))
+<a class="nav-link {{ $active?'is-active':'' }}" href="{{ route($target) }}" @if($active)aria-current="page"@endif><x-icon name="{{ $icon }}"/><span>{{ $label }}</span></a>
+@endforeach
+@endforeach
+@endif
+</nav>
+<div class="sidebar-account"><div class="avatar">{{ mb_substr($me->name,0,1) }}</div><div class="account-copy"><strong>{{ $me->name }}</strong><span>{{ $me->role->label() }}</span></div><form method="POST" action="{{ route('logout') }}">@csrf<button class="icon-button" aria-label="Keluar dari akun" title="Keluar"><x-icon name="logout"/></button></form></div>
+</aside>
+<div id="app-sidebar-overlay" class="sidebar-overlay no-print" hidden></div>
+<div id="app-workspace" class="app-workspace">
+<header class="app-topbar no-print"><div class="topbar-title"><button type="button" data-sidebar-open class="icon-button drawer-open" aria-label="Buka menu" aria-controls="app-sidebar" aria-expanded="false"><x-icon name="menu"/></button><div><span class="topbar-eyebrow">KOPERASI DESA</span><h1>@yield('title','Dasbor')</h1></div></div><div class="topbar-meta"><span class="today-label">{{ now()->translatedFormat('d M Y') }}</span><span id="network-status" class="connection-tag"><span class="status-dot"></span><span>Online</span></span></div></header>
+<main id="main-content" class="app-page" tabindex="-1">
+@if(session('status'))<div class="notice notice-success" role="status"><x-icon name="check"/><div>{{ session('status') }}</div></div>@endif
+@if($errors->any())<div class="notice notice-error" role="alert"><x-icon name="alert"/><div><strong>Periksa kembali data Anda.</strong><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div></div>@endif
+@yield('content')
+<footer class="page-footer no-print"><span>Kopdes · Sistem POS satu toko</span><span>Data tersimpan di server, bukan di perangkat kasir.</span></footer>
+</main>
+</div>
+<nav class="mobile-shortcuts no-print" aria-label="Akses cepat">
+@if($me->isKasir())
+@foreach([['pos.index','Kasir','calculator'],['pos.products','Barcode','box'],['pos.history','Riwayat','receipt']] as [$target,$label,$icon])
+<a href="{{ route($target) }}" class="{{ request()->routeIs($target)?'is-active':'' }}" @if(request()->routeIs($target))aria-current="page"@endif><x-icon name="{{ $icon }}"/><span>{{ $label }}</span></a>
+@endforeach
+@else
+@foreach([['dashboard','Beranda','home'],['products.index','Barang','box'],['sales.index','Penjualan','receipt'],['reports.daily','Laporan','chart']] as [$target,$label,$icon])<a href="{{ route($target) }}" class="{{ request()->routeIs($target)?'is-active':'' }}"><x-icon name="{{ $icon }}"/><span>{{ $label }}</span></a>@endforeach
+@endif
+</nav>
+</div>
+@else
+<main id="main-content" tabindex="-1">@yield('content')</main>
 @endauth
-
-<script>
-    // Buka/tutup sidebar pada layar kecil (SRS Look & Feel #3: tetap sidebar kiri).
-    (function () {
-        var sidebar = document.getElementById('app-sidebar');
-        var overlay = document.getElementById('app-sidebar-overlay');
-        if (! sidebar) { return; }
-
-        function buka() { sidebar.classList.remove('-translate-x-full'); if (overlay) overlay.classList.remove('hidden'); }
-        function tutup() { sidebar.classList.add('-translate-x-full'); if (overlay) overlay.classList.add('hidden'); }
-
-        document.querySelectorAll('[data-sidebar-open]').forEach(function (b) { b.addEventListener('click', buka); });
-        document.querySelectorAll('[data-sidebar-close]').forEach(function (b) { b.addEventListener('click', tutup); });
-        if (overlay) { overlay.addEventListener('click', tutup); }
-    })();
-
-    // Penanda status jaringan pada bilah atas (dipakai semua halaman).
-    (function () {
-        var lencana = document.getElementById('lencana-jaringan');
-
-        function gambar(online, antrian) {
-            if (! lencana) {
-                return;
-            }
-
-            lencana.classList.remove('hidden');
-
-            if (online) {
-                lencana.className = 'rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700';
-                lencana.textContent = antrian > 0 ? 'Online - ' + antrian + ' transaksi menunggu kirim' : 'Online';
-            } else {
-                lencana.className = 'rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700';
-                lencana.textContent = antrian > 0 ? 'Offline - ' + antrian + ' transaksi tersimpan lokal' : 'Mode offline';
-            }
-        }
-
-        var jumlahAntrian = 0;
-
-        window.addEventListener('pos-offline:status', function (event) {
-            jumlahAntrian = event.detail.antrian || 0;
-            gambar(event.detail.online, jumlahAntrian);
-        });
-
-        window.addEventListener('pos-offline:antrian', function (event) {
-            jumlahAntrian = event.detail.jumlah || 0;
-            gambar(navigator.onLine, jumlahAntrian);
-        });
-
-        window.addEventListener('online', function () {
-            gambar(true, jumlahAntrian);
-        });
-        window.addEventListener('offline', function () {
-            gambar(false, jumlahAntrian);
-        });
-
-        gambar(navigator.onLine, 0);
-    })();
-
-    // Pendaftaran service worker agar halaman tetap terbuka saat jaringan mati.
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function () {
-            navigator.serviceWorker.register('{{ asset('sw.js') }}').catch(function (error) {
-                console.warn('Service worker gagal didaftarkan:', error.message);
-            });
-        });
-    }
-</script>
-</body>
-</html>
+<script src="{{ asset('js/app-shell.js') }}"></script>
+<script src="{{ asset('js/table-pagination.js') }}"></script>
+@stack('scripts')
+</body></html>

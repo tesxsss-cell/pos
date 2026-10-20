@@ -1,144 +1,24 @@
 @extends('layouts.app')
-
-@section('title', 'Dasbor')
-
+@section('title','Dasbor')
 @section('content')
-    @php($maxSeries = max(1, (float) $dailySeries->max('penjualan')))
-
-    <form method="GET" class="mb-6 flex flex-wrap items-end gap-3 rounded-xl bg-white p-4 shadow">
-        <div>
-            <label class="block text-xs font-medium text-slate-500">Darikan tanggalx2</label>
-            <input type="date" name="dari" value="{{ $from }}" class="mt-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm">
-        </div>
-        <div>
-            <label class="block text-xs font-medium text-slate-500">Sampai tanggal</label>
-            <input type="date" name="sampai" value="{{ $to }}" class="mt-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm">
-        </div>
-        @if ($branches->isNotEmpty())
-            <div>
-                <label class="block text-xs font-medium text-slate-500">Cabang</label>
-                <select name="cabang" class="mt-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm">
-                    <option value="">Semua cabang</option>
-                    @foreach ($branches as $branch)
-                        <option value="{{ $branch->id }}" @selected($branchId === $branch->id)>{{ $branch->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-        @endif
-        <button class="rounded-md bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-medium text-white">Terapkan filter</button>
-    </form>
-
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        @foreach ([
-            ['Penjualan', $summary['revenue'], 'text-slate-900'],
-            ['HPP (FIFO)', $summary['cogs'], 'text-amber-700'],
-            ['Laba kotor', $summary['gross_profit'], $summary['gross_profit'] >= 0 ? 'text-emerald-700' : 'text-red-700'],
-            ['Nilai persediaan', $inventoryValue, 'text-slate-900'],
-        ] as [$label, $value, $tone])
-            <div class="rounded-xl bg-white p-4 shadow">
-                <p class="text-xs uppercase tracking-wide text-slate-500">{{ $label }}</p>
-                <p class="mt-1 text-xl font-semibold {{ $tone }}">Rp {{ number_format((float) $value, 0, ',', '.') }}</p>
-            </div>
-        @endforeach
-    </div>
-
-    <div class="mt-4 grid gap-4 sm:grid-cols-3">
-        <div class="rounded-xl bg-white p-4 shadow">
-            <p class="text-xs uppercase tracking-wide text-slate-500">Transaksi</p>
-            <p class="mt-1 text-xl font-semibold">{{ number_format($summary['transactions'], 0, ',', '.') }}</p>
-        </div>
-        <div class="rounded-xl bg-white p-4 shadow">
-            <p class="text-xs uppercase tracking-wide text-slate-500">Barang terjual</p>
-            <p class="mt-1 text-xl font-semibold">{{ number_format($summary['items_sold'], 0, ',', '.') }}</p>
-        </div>
-        <div class="rounded-xl bg-white p-4 shadow">
-            <p class="text-xs uppercase tracking-wide text-slate-500">Rata-rata per transaksi</p>
-            <p class="mt-1 text-xl font-semibold">Rp {{ number_format($summary['average_transaction'], 0, ',', '.') }}</p>
-        </div>
-    </div>
-
-    <div class="mt-6 grid gap-4 lg:grid-cols-2">
-        <section class="rounded-xl bg-white p-4 shadow">
-            <h2 class="font-semibold text-slate-900">Grafik penjualan &amp; laba harian</h2>
-            @if ($dailySeries->isEmpty())
-                <p class="mt-4 text-sm text-slate-500">Belum ada transaksi pada periode ini.</p>
-            @else
-                <div class="mt-4 space-y-2">
-                    @foreach ($dailySeries as $row)
-                        <div>
-                            <div class="flex justify-between text-xs text-slate-500">
-                                <span>{{ \Illuminate\Support\Carbon::parse($row->tanggal)->format('d M Y') }}</span>
-                                <span>Rp {{ number_format((float) $row->penjualan, 0, ',', '.') }} &middot; laba Rp {{ number_format((float) $row->laba_kotor, 0, ',', '.') }}</span>
-                            </div>
-                            <div class="mt-1 h-3 w-full overflow-hidden rounded bg-slate-100">
-                                <div class="h-3 rounded bg-brand-600" style="width: {{ round(((float) $row->penjualan / $maxSeries) * 100, 2) }}%"></div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            @endif
-        </section>
-
-        <section class="rounded-xl bg-white p-4 shadow">
-            <h2 class="font-semibold text-slate-900">Produk terlaris</h2>
-            @if ($topProducts->isEmpty())
-                <p class="mt-4 text-sm text-slate-500">Belum ada data penjualan.</p>
-            @else
-                <table class="mt-3 w-full text-sm">
-                    <thead class="text-left text-xs uppercase text-slate-500">
-                        <tr><th class="py-2">Barang</th><th class="py-2 text-right">Qty</th><th class="py-2 text-right">Laba kotor</th></tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        @foreach ($topProducts as $product)
-                            <tr>
-                                <td class="py-2">{{ $product->name }} <span class="text-xs text-slate-400">{{ $product->sku }}</span></td>
-                                <td class="py-2 text-right">{{ number_format((float) $product->qty_terjual, 0, ',', '.') }}</td>
-                                <td class="py-2 text-right">Rp {{ number_format((float) $product->laba_kotor, 0, ',', '.') }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            @endif
-        </section>
-
-        <section class="rounded-xl bg-white p-4 shadow">
-            <h2 class="font-semibold text-slate-900">Peringatan stok minimum</h2>
-            @if ($lowStocks->isEmpty())
-                <p class="mt-4 text-sm text-slate-500">Semua stok masih di atas batas minimum.</p>
-            @else
-                <ul class="mt-3 divide-y divide-slate-100 text-sm">
-                    @foreach ($lowStocks as $stock)
-                        <li class="flex items-center justify-between py-2">
-                            <span>{{ $stock->product->name }} <span class="text-xs text-slate-400">{{ $stock->branch->name }}</span></span>
-                            <span class="rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-                                sisa {{ $stock->quantity }} {{ $stock->product->unit }} (min {{ $stock->effectiveMinStock() }})
-                            </span>
-                        </li>
-                    @endforeach
-                </ul>
-            @endif
-        </section>
-
-        <section class="rounded-xl bg-white p-4 shadow">
-            <h2 class="font-semibold text-slate-900">Rekap shift kasir</h2>
-            @if ($shifts->isEmpty())
-                <p class="mt-4 text-sm text-slate-500">Belum ada shift pada periode ini.</p>
-            @else
-                <table class="mt-3 w-full text-sm">
-                    <thead class="text-left text-xs uppercase text-slate-500">
-                        <tr><th class="py-2">Kasir</th><th class="py-2">Status</th><th class="py-2 text-right">Selisih kas</th></tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        @foreach ($shifts as $shift)
-                            <tr>
-                                <td class="py-2">{{ $shift->user->name }}<div class="text-xs text-slate-400">{{ $shift->opened_at?->format('d M Y H:i') }}</div></td>
-                                <td class="py-2">{{ $shift->status }}</td>
-                                <td class="py-2 text-right">Rp {{ number_format((float) $shift->difference, 0, ',', '.') }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            @endif
-        </section>
-    </div>
+<section class="page-heading"><div><span class="eyebrow">RINGKASAN USAHA</span><h2>Selamat datang, {{ auth()->user()->name }}.</h2><p>Pantau penjualan, persediaan, dan aktivitas toko Anda.</p></div><a class="btn-primary" href="{{ route('purchases.create') }}"><x-icon name="plus"/> Penerimaan barang</a></section>
+<form method="GET" class="filter-bar"><div class="filter-title"><x-icon name="chart"/><span>Periode laporan</span></div><label for="dashboard-from">Dari tanggal<input id="dashboard-from" class="field" type="date" name="dari" value="{{ $from }}"></label><label for="dashboard-to">Sampai tanggal<input id="dashboard-to" class="field" type="date" name="sampai" value="{{ $to }}"></label><button class="btn-primary" type="submit">Terapkan</button></form>
+<div class="metric-grid">
+@foreach([['Penjualan',$summary['revenue'],'receipt','Transaksi selesai pada periode ini'],['Harga pokok penjualan',$summary['cogs'],'box','Menggunakan Moving Average'],['Laba kotor',$summary['gross_profit'],'chart','Penjualan dikurangi HPP'],['Nilai persediaan',$inventoryValue,'layers','Nilai stok toko saat ini']] as [$label,$value,$icon,$note])
+<section class="metric-card"><div class="metric-top"><span>{{ $label }}</span><span class="metric-icon"><x-icon name="{{ $icon }}"/></span></div><strong class="metric-value">Rp {{ number_format($value,0,',','.') }}</strong><p>{{ $note }}</p></section>
+@endforeach
+</div>
+<div class="activity-strip"><span><x-icon name="receipt"/><strong>{{ $summary['transactions'] }}</strong> transaksi selesai</span><span><x-icon name="box"/><strong>{{ $summary['items_sold'] }}</strong> unit terjual</span><span>Transaksi dibatalkan tidak masuk perhitungan.</span></div>
+<div class="dashboard-grid">
+<section class="panel"><div class="panel-heading"><div><h3>Perlu perhatian</h3><p>Barang yang mencapai batas stok minimum.</p></div><span class="count-tag {{ $lowStocks->count()?'is-warning':'' }}">{{ $lowStocks->count() }} barang</span></div>
+<div class="stock-attention-list">@forelse($lowStocks->take(6) as $stock)<div class="stock-attention-item"><div class="product-avatar"><x-icon name="box"/></div><div class="item-copy"><strong>{{ $stock->product->name }}</strong><span>Minimum {{ $stock->effectiveMinStock() }} {{ $stock->product->unit }}</span></div><span class="stock-quantity">{{ $stock->quantity }} <small>{{ $stock->product->unit }}</small></span></div>
+@empty<div class="empty-state"><span class="empty-icon"><x-icon name="check"/></span><h4>Persediaan masih aman</h4><p>Belum ada barang aktif yang mencapai stok minimum.</p></div>@endforelse</div><a class="panel-link" href="{{ route('reports.stock') }}">Lihat seluruh persediaan <x-icon name="arrow"/></a></section>
+<section class="panel"><div class="panel-heading"><div><h3>Akses cepat</h3><p>Pekerjaan harian, lebih ringkas.</p></div></div><div class="quick-actions">
+@foreach([['products.create','Tambah barang','Lengkapi katalog toko','box'],['purchases.create','Catat penerimaan','Perbarui stok dan HPP','truck'],['sales.index','Riwayat penjualan','Periksa struk dan pembatalan','receipt'],['reports.daily','Laporan penjualan','Lihat hasil usaha per periode','chart']] as [$route,$title,$desc,$icon])<a href="{{ route($route) }}"><span class="action-icon"><x-icon name="{{ $icon }}"/></span><span><strong>{{ $title }}</strong><small>{{ $desc }}</small></span><x-icon name="arrow"/></a>@endforeach
+</div></section>
+</div>
+<section class="panel mt-6"><div class="panel-heading"><div><h3>Aktivitas shift kasir</h3><p>Rekap sesi kerja dan pertanggungjawaban kas.</p></div><a class="text-link" href="{{ route('reports.shift') }}">Lihat semua <x-icon name="arrow"/></a></div><div class="table-scroll">@php($shiftRows=\App\Support\TablePage::make($shifts, 'shift_page'))<table data-server-table><thead><tr><th>Kasir</th><th>Waktu buka</th><th>Status</th><th>Kas sistem</th><th>Selisih kas</th></tr></thead><tbody>
+@forelse($shiftRows as $shift)<tr><td><strong>{{ $shift->user->name }}</strong></td><td>{{ $shift->opened_at->format('d M Y, H:i') }}</td><td><span class="state-tag {{ $shift->isOpen()?'is-open':'' }}">{{ $shift->isOpen()?'Berlangsung':'Ditutup' }}</span></td><td>Rp {{ number_format((float)$shift->expected_cash,0,',','.') }}</td><td>{{ $shift->isOpen()?'Belum dihitung':'Rp '.number_format((float)$shift->difference,0,',','.') }}</td></tr>@empty<tr><td colspan="5"><div class="table-empty"><x-icon name="clock"/><span>Belum ada shift pada periode ini.</span></div></td></tr>@endforelse
+</tbody></table>{{ $shiftRows->links() }}</div></section>
+<p class="report-disclaimer">Laporan ini menampilkan laba kotor toko, bukan laba bersih atau SHU koperasi.</p>
 @endsection

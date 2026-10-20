@@ -6,9 +6,9 @@
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
             <h1 class="text-lg font-semibold text-slate-900">Mutasi Stok Gudang &rarr; Cabang</h1>
-            <p class="text-xs text-slate-500">Harga pokok setiap batch FIFO terbawa saat barang dipindahkan.</p>
+            <p class="text-xs text-slate-500">Harga pokok setiap HPP rata-rata terbawa saat barang dipindahkan.</p>
         </div>
-        @if (auth()->user()->isCentral())
+        @if (auth()->user()->hasRole('pemilik', 'admin', 'manager_cabang'))
             <a href="{{ route('transfers.create') }}" class="rounded-md bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-medium text-white">Buat mutasi</a>
         @endif
     </div>

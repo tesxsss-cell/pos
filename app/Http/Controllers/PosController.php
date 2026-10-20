@@ -2,372 +2,196 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\PaymentMethod;
 use App\Models\CashierShift;
 use App\Models\Product;
 use App\Models\ProductBarcode;
+use App\Models\Branch;
+use Illuminate\Validation\ValidationException;
 use App\Models\Sale;
-use App\Services\BarcodeService;
+use App\Models\User;
 use App\Services\SaleService;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
-use Throwable;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use RuntimeException;
 
-/**
- * HF-04 Transaksi Penjualan (POS): pencarian/pemindaian barcode, pendaftaran
- * barcode barang dari halaman kasir, checkout, struk, pembatalan transaksi,
- * serta buka/tutup shift kasir (HF-06).
- */
 class PosController extends Controller
 {
-    public function __construct(
-        private readonly SaleService $sales,
-        private readonly BarcodeService $barcodes,
-    ) {}
+    public function __construct(private readonly SaleService $sales) {}
 
-    public function index(Request $request): View
+    public function index(Request $request)
     {
-        $user = $request->user();
-        abort_if(! $user->branch_id, 403, 'Akun Anda belum ditempatkan pada cabang mana pun.');
-
-        // Shift kasir dibuat otomatis sehingga selalu terbuka. Kasir tetap bisa
-        // menutup shift lewat tombol "Tutup shift"; shift baru akan dibuka lagi
-        // otomatis saat halaman kasir dibuka kembali.
-        $shift = $user->openShift();
-
-        if (! $shift) {
-            $shift = CashierShift::create([
-                'branch_id' => $user->branch_id,
-                'user_id' => $user->id,
-                'opened_at' => now(),
-                'opening_cash' => 0,
-                'expected_cash' => 0,
-                'status' => 'dibuka',
-            ]);
-        }
-
-        return view('pos.index', [
-            'branch' => $user->branch,
-            'shift' => $shift,
-            'paymentMethods' => PaymentMethod::options(),
-            // Hanya peran ini yang boleh mengubah harga master dari halaman kasir.
-            'canUpdatePrice' => $user->hasRole('admin', 'pemilik', 'manager_cabang'),
-            'recentSales' => Sale::query()
-                ->where('branch_id', $user->branch_id)
-                ->where('user_id', $user->id)
-                ->latest('sold_at')
-                ->limit(10)
-                ->get(),
-        ]);
+        return view('pos.index', ['shift' => $request->user()->openShift()]);
     }
 
-    /**
-     * HF-04 Daftar produk cabang untuk kasir. Menampilkan barang milik cabang
-     * kasir (nama, harga, stok, barcode terdaftar) dalam bentuk tabel. Tiap
-     * baris punya aksi "Daftarkan barcode" / "Ganti barcode" yang membuka pop up
-     * pemindai barcode.
-     */
-    public function products(Request $request): View
+    public function products(Request $request)
     {
-        $user = $request->user();
-        abort_if(! $user->branch_id, 403, 'Akun Anda belum ditempatkan pada cabang mana pun.');
+        $data = $request->validate(['q' => ['nullable', 'string', 'max:150'], 'barcode' => ['nullable', 'string', 'max:60']]);
+        $q = trim($data['q'] ?? '');
+        $products = Product::query()->active()->search($q)
+            ->with(['barcodes', 'stocks' => fn ($query) => $query->where('branch_id', $request->user()->branch_id)])
+            ->orderBy('name')->orderBy('id')->paginate(10)->withQueryString();
 
-        $branchId = $user->branch_id;
-        $kataKunci = trim($request->string('q')->toString());
-
-        $paginator = $this->barcodes->productQuery($branchId)
-            ->active()
-            ->when($kataKunci !== '', fn ($query) => $query->search($kataKunci))
-            ->orderBy('name')
-            ->paginate(25)
-            ->withQueryString();
-
-        $rows = $paginator->getCollection()
-            ->map(fn (Product $product) => $this->barcodes->present($product, $branchId))
-            ->values()
-            ->all();
-
-        return view('pos.products', [
-            'branch' => $user->branch,
-            'paginator' => $paginator,
-            'rows' => $rows,
-            'q' => $kataKunci,
-            // Hanya peran ini yang boleh mengubah harga master; kasir tidak.
-            'canUpdatePrice' => $user->hasRole('admin', 'pemilik', 'manager_cabang'),
-        ]);
+        $initialCode = $data['barcode'] ?? '';
+        return view('pos.products', compact('products', 'q', 'initialCode'));
     }
 
-    /** Dipakai input pemindaian barcode/QR maupun pencarian manual. */
-    public function lookup(Request $request): JsonResponse
-    {
-        $request->validate(['q' => ['required', 'string', 'min:1']]);
-
-        $branchId = $request->user()->branch_id;
-        $kataKunci = trim($request->string('q')->toString());
-        $kode = $this->barcodes->normalize($kataKunci);
-
-        $terdaftar = $this->barcodes->resolve($kode);
-        $barangBarcode = $terdaftar?->product
-            ?? ($kode !== '' ? Product::query()->where('barcode', $kode)->first() : null);
-
-        $daftar = $this->barcodes->productQuery($branchId)
-            ->active()
-            ->search($kataKunci)
-            ->orderBy('name')
-            ->limit(15)
-            ->get();
-
-        // Barang pemilik barcode selalu di urutan pertama walau namanya tidak mirip.
-        if ($barangBarcode && ! $daftar->contains('id', $barangBarcode->id)) {
-            $daftar->prepend(
-                $this->barcodes->productQuery($branchId)->whereKey($barangBarcode->id)->first() ?? $barangBarcode
-            );
-        }
-
-        $data = $daftar
-            ->map(fn (Product $product) => $this->barcodes->present(
-                $product,
-                $branchId,
-                $terdaftar && $terdaftar->product_id === $product->id ? $terdaftar : null,
-            ))
-            ->values();
-
-        return response()->json([
-            'data' => $data,
-            'scanned_barcode' => $kode !== '' ? $kode : null,
-            'barcode_registered' => $kode !== '' && $barangBarcode !== null,
-        ]);
-    }
-
-    /**
-     * Cek satu hasil pemindaian: barcode sudah terdaftar atau belum.
-     * Bila sudah, informasi barang (harga & jumlah tersimpan) langsung dikirim.
-     */
-    public function resolveBarcode(Request $request): JsonResponse
-    {
-        $request->validate(['barcode' => ['required', 'string', 'max:80']]);
-
-        $branchId = $request->user()->branch_id;
-        $kode = $this->barcodes->normalize($request->string('barcode')->toString());
-
-        $terdaftar = $this->barcodes->resolve($kode);
-        $product = $terdaftar?->product
-            ?? ($kode !== '' ? Product::query()->where('barcode', $kode)->first() : null);
-
-        if (! $product instanceof Product) {
-            return response()->json([
-                'barcode' => $kode,
-                'registered' => false,
-                'product' => null,
-                'message' => 'Barcode belum terdaftar. Ketik nama barangnya untuk dicocokkan.',
-            ]);
-        }
-
-        $product = $this->barcodes->productQuery($branchId)->whereKey($product->id)->first() ?? $product;
-
-        return response()->json([
-            'barcode' => $kode,
-            'registered' => true,
-            'product' => $this->barcodes->present($product, $branchId, $terdaftar),
-            'message' => $product->name.' siap dijual.',
-        ]);
-    }
-
-    /** Rekomendasi barang dari nama yang diketik kasir pada panel pendaftaran barcode. */
-    public function suggestProducts(Request $request): JsonResponse
-    {
-        $request->validate(['q' => ['required', 'string', 'min:1']]);
-
-        $branchId = $request->user()->branch_id;
-
-        $data = $this->barcodes->suggest($request->string('q')->toString())
-            ->map(fn (Product $product) => $this->barcodes->present($product, $branchId))
-            ->values();
-
-        return response()->json(['data' => $data]);
-    }
-
-    /**
-     * Simpan pemetaan barcode -> barang (harga & jumlah bawaan ikut disimpan).
-     * Harga yang sama dengan harga master disimpan sebagai "ikut master", sehingga
-     * harga tetap sama selama harga master tidak diubah.
-     */
-    public function storeBarcode(Request $request): JsonResponse
+    public function history(Request $request)
     {
         $data = $request->validate([
-            'barcode' => ['required', 'string', 'max:80'],
-            'product_id' => ['nullable', 'integer', 'exists:products,id'],
-            'name' => ['nullable', 'string', 'max:150'],
-            'sell_price' => ['nullable', 'numeric', 'min:0'],
-            'quantity' => ['nullable', 'integer', 'min:1', 'max:10000'],
-            'update_product_price' => ['nullable', 'boolean'],
-            'replace' => ['nullable', 'boolean'],
+            'dari' => ['nullable', 'date_format:Y-m-d'],
+            'sampai' => ['nullable', 'date_format:Y-m-d'],
+            'status' => ['nullable', Rule::in(['selesai', 'dibatalkan'])],
         ]);
-
-        $user = $request->user();
-
-        if (blank($data['product_id'] ?? null) && blank($data['name'] ?? null)) {
-            return response()->json([
-                'message' => 'Ketik nama barang lebih dahulu lalu pilih rekomendasinya.',
-                'suggestions' => [],
-            ], 422);
+        $from = $data['dari'] ?? null;
+        $to = $data['sampai'] ?? null;
+        if ($from && $to && $to < $from) {
+            throw ValidationException::withMessages(['sampai' => 'Tanggal akhir tidak boleh sebelum tanggal awal.']);
         }
+        $status = $data['status'] ?? null;
+        $sales = Sale::query()->where('user_id', $request->user()->id)
+            ->where('branch_id', $request->user()->branch_id)
+            ->when($from, fn ($query) => $query->whereDate('sold_at', '>=', $from))
+            ->when($to, fn ($query) => $query->whereDate('sold_at', '<=', $to))
+            ->when($status, fn ($query) => $query->where('status', $status))
+            ->orderByDesc('sold_at')->orderByDesc('id')->paginate(10)->withQueryString();
 
-        try {
-            $barcode = $this->barcodes->register([
-                'barcode' => $data['barcode'],
-                'product_id' => $data['product_id'] ?? null,
-                'name' => $data['name'] ?? null,
-                'sell_price' => $data['sell_price'] ?? null,
-                'default_quantity' => $data['quantity'] ?? 1,
-                'update_product_price' => (bool) ($data['update_product_price'] ?? false),
-                'replace' => (bool) ($data['replace'] ?? false),
-            ], $user);
-        } catch (Throwable $e) {
-            return response()->json([
-                'message' => $e->getMessage(),
-                'suggestions' => $this->barcodes->suggest($data['name'] ?? null)
-                    ->map(fn (Product $product) => $this->barcodes->present($product, $user->branch_id))
-                    ->values(),
-            ], 422);
-        }
-
-        $product = $this->barcodes->productQuery($user->branch_id)
-            ->whereKey($barcode->product_id)
-            ->first();
-
-        return response()->json([
-            'message' => 'Barcode '.$barcode->barcode.' tersimpan untuk '.$product->name.'.',
-            'barcode' => $barcode->barcode,
-            'product' => $this->barcodes->present($product, $user->branch_id, $barcode),
-        ]);
+        return view('pos.history', compact('sales', 'from', 'to', 'status'));
     }
 
-    /** Lepas barcode dari barang (mis. salah tempel / barcode pabrik berubah). */
-    public function destroyBarcode(Request $request, ProductBarcode $productBarcode): JsonResponse
+    public function lookup(Request $request)
     {
-        $nama = $productBarcode->product?->name ?? 'barang';
-        $kode = $this->barcodes->unregister($productBarcode);
-
-        return response()->json([
-            'message' => 'Barcode '.$kode.' dilepas dari '.$nama.'.',
-        ]);
+        $data = $request->validate(['q' => ['required', 'string', 'max:150']]);
+        $term = trim($data['q']);
+        $code = ProductBarcode::normalize($term);
+        $alias = ProductBarcode::where('barcode', $code)->value('product_id');
+        $rows = Product::query()->active()->with(['stocks' => fn ($q) => $q->where('branch_id', $request->user()->branch_id)])
+            ->where(fn ($q) => $q->where('barcode', $code)->orWhere('sku', 'like', '%'.$term.'%')->orWhere('name', 'like', '%'.$term.'%')
+                ->orWhereHas('barcodes', fn ($b) => $b->where('barcode', $code)))
+            ->orderByRaw('CASE WHEN barcode = ? OR sku = ? OR id = ? THEN 0 ELSE 1 END', [$code, $term, $alias])->orderBy('name')->orderBy('id')
+            ->paginate(10)->withQueryString();
+        return response()->json(['data' => $rows->getCollection()->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'sku' => $p->sku,
+            'barcode' => $p->barcode, 'matched_barcode' => ((int) $alias === (int) $p->id || $p->barcode === $code) ? $code : null,
+            'unit' => $p->unit, 'sell_price' => (float) $p->sell_price, 'stock' => (int) ($p->stocks->first()?->quantity ?? 0)]),
+            'current_page' => $rows->currentPage(), 'last_page' => $rows->lastPage(), 'total' => $rows->total()]);
     }
 
-    public function checkout(Request $request): JsonResponse
+    public function storeBarcode(Request $request)
+    {
+        $request->validate(['barcode' => ['required', 'string', 'max:150']]);
+        $request->merge(['barcode' => ProductBarcode::normalize($request->input('barcode'))]);
+        $data = $request->validate(['barcode' => ['required', 'string', 'max:60', 'regex:/^[A-Za-z0-9._:\/-]+$/'],
+            'product_id' => ['required', 'integer'], 'sell_price' => ['prohibited'], 'default_quantity' => ['prohibited']]);
+        return DB::transaction(function () use ($request, $data) {
+            Branch::whereKey($request->user()->branch_id)->lockForUpdate()->firstOrFail();
+            $product = Product::query()->active()->whereKey($data['product_id'])->lockForUpdate()->first();
+            if (! $product) { throw ValidationException::withMessages(['product_id' => 'Barang tidak aktif atau tidak tersedia.']); }
+            $master = Product::withTrashed()->where('barcode', $data['barcode'])->first();
+            $alias = ProductBarcode::where('barcode', $data['barcode'])->first();
+            if (($master && $master->id !== $product->id) || ($alias && $alias->product_id !== $product->id)) {
+                throw ValidationException::withMessages(['barcode' => 'Barcode sudah dipakai barang lain.']);
+            }
+            $row = ProductBarcode::firstOrCreate(['barcode' => $data['barcode']], ['product_id' => $product->id,
+                'sell_price' => null, 'default_quantity' => 1, 'branch_id' => $request->user()->branch_id, 'registered_by' => $request->user()->id]);
+            return response()->json(['message' => 'Barcode tersimpan. Harga tetap mengikuti master barang.', 'barcode' => $row->barcode]);
+        }, 3);
+    }
+
+    public function checkout(Request $request)
     {
         $data = $request->validate([
+            'request_id' => ['required', 'uuid'], 'cashier_shift_id' => ['required', 'integer'],
             'customer_name' => ['nullable', 'string', 'max:100'],
-            'payment_method' => ['required', 'string', 'in:'.implode(',', array_keys(PaymentMethod::options()))],
-            'discount' => ['nullable', 'numeric', 'min:0'],
-            'paid_amount' => ['nullable', 'numeric', 'min:0'],
+            'payment_method' => ['required', Rule::in(['tunai', 'qris', 'transfer', 'debit'])],
+            'payment_confirmed' => ['required_if:payment_method,qris,transfer,debit', 'accepted_if:payment_method,qris,transfer,debit'],
+            'paid_amount' => ['required_if:payment_method,tunai', 'nullable', 'numeric', 'min:0', 'max:999999999999'],
             'note' => ['nullable', 'string', 'max:255'],
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.product_id' => ['required', 'integer', 'exists:products,id'],
-            'items.*.quantity' => ['required', 'integer', 'min:1'],
-            'items.*.unit_price' => ['nullable', 'numeric', 'min:0'],
-            'items.*.discount' => ['nullable', 'numeric', 'min:0'],
+            'items' => ['required', 'array', 'min:1', 'max:100'],
+            'items.*.product_id' => ['required', 'integer', 'distinct', 'exists:products,id'],
+            'items.*.quantity' => ['required', 'integer', 'min:1', 'max:100000'],
+            'items.*.expected_price' => ['sometimes', 'numeric', 'min:0', 'max:999999999'],
+            'items.*.unit_price' => ['prohibited'], 'items.*.discount' => ['prohibited'], 'discount' => ['prohibited'],
         ]);
-
-        $user = $request->user();
-
         try {
-            $sale = $this->sales->checkout([
-                ...$data,
-                'branch_id' => $user->branch_id,
-                'user_id' => $user->id,
-                'cashier_shift_id' => $user->openShift()?->id,
-            ]);
-        } catch (Throwable $e) {
+            $sale = $this->sales->checkout([...$data, 'user_id' => $request->user()->id]);
+        } catch (QueryException $e) {
+            report($e);
+
+            return response()->json(['message' => 'Server belum dapat mengonfirmasi transaksi. Coba kembali dengan ID permintaan yang sama.'], 503);
+        } catch (RuntimeException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
 
-        return response()->json([
-            'message' => 'Transaksi berhasil disimpan.',
-            'invoice_no' => $sale->invoice_no,
-            'total' => (float) $sale->total,
-            'change_amount' => (float) $sale->change_amount,
-            'receipt_url' => route('pos.receipt', $sale),
-        ]);
+        return response()->json(['message' => 'Transaksi tersimpan di server.', 'invoice_no' => $sale->invoice_no,
+            'total' => (float) $sale->total, 'change_amount' => (float) $sale->change_amount, 'expected_cash' => (float) $sale->shift->fresh()->expected_cash,
+            'sold_at_label' => $sale->sold_at->format('d/m H:i'),
+            'sale_status' => $sale->status->value,
+            'receipt_url' => route('pos.receipt', $sale)]);
     }
 
-    public function receipt(Request $request, Sale $sale): View
+    public function receipt(Request $request, Sale $sale)
     {
-        $this->authorizeBranch($request, $sale->branch_id);
+        abort_if($sale->branch_id !== $request->user()->branch_id, 403);
+        abort_if($request->user()->isKasir() && $sale->user_id !== $request->user()->id, 403);
 
-        return view('pos.receipt', [
-            'sale' => $sale->load(['items', 'branch', 'cashier']),
-        ]);
+        return view('pos.receipt', ['sale' => $sale->load(['items', 'branch', 'cashier'])]);
     }
 
-    /** Pembatalan transaksi: stok & lapisan FIFO dikembalikan. */
-    public function void(Request $request, Sale $sale): RedirectResponse
+    public function sales(Request $request)
     {
-        $this->authorizeBranch($request, $sale->branch_id);
+        $data = $request->validate(['dari' => ['nullable', 'date'], 'sampai' => ['nullable', 'date', 'after_or_equal:dari']]);
+        $from = $data['dari'] ?? now()->toDateString();
+        $to = $data['sampai'] ?? now()->toDateString();
 
-        $data = $request->validate(['reason' => ['required', 'string', 'max:255']]);
+        return view('pos.sales', ['from' => $from, 'to' => $to, 'sales' => Sale::where('branch_id', $request->user()->branch_id)
+            ->between($from, $to)->with(['cashier', 'shift'])->latest('id')->paginate(10)->withQueryString()]);
+    }
 
+    public function void(Request $request, Sale $sale)
+    {
+        abort_unless($request->user()->isPengelola(), 403);
+        abort_if($sale->branch_id !== $request->user()->branch_id, 403);
+        $data = $request->validate(['reason' => ['required', 'string', 'max:255'], 'confirm_return' => ['accepted']]);
         try {
             $this->sales->void($sale, $request->user()->id, $data['reason']);
-        } catch (Throwable $e) {
+        } catch (RuntimeException $e) {
             return back()->withErrors(['reason' => $e->getMessage()]);
         }
 
-        return back()->with('status', "Transaksi {$sale->invoice_no} dibatalkan.");
+        return back()->with('status', 'Penjualan dibatalkan. Stok dan kas sistem sudah dikoreksi; riwayat tetap ada.');
     }
 
-    public function openShift(Request $request): RedirectResponse
+    public function openShift(Request $request)
     {
-        $data = $request->validate(['opening_cash' => ['required', 'numeric', 'min:0']]);
-        $user = $request->user();
+        $data = $request->validate(['opening_cash' => ['required', 'numeric', 'min:0', 'max:999999999999']]);
 
-        if ($user->openShift()) {
-            return back()->withErrors(['opening_cash' => 'Masih ada shift yang belum ditutup.']);
-        }
+        return DB::transaction(function () use ($request, $data) {
+            $user = User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
+            if ($user->openShift()) {
+                return back()->withErrors(['opening_cash' => 'Masih ada shift terbuka.']);
+            }
+            CashierShift::create(['branch_id' => $user->branch_id, 'user_id' => $user->id, 'opened_at' => now(),
+                'opening_cash' => $data['opening_cash'], 'expected_cash' => $data['opening_cash'], 'status' => 'dibuka']);
 
-        CashierShift::create([
-            'branch_id' => $user->branch_id,
-            'user_id' => $user->id,
-            'opened_at' => now(),
-            'opening_cash' => $data['opening_cash'],
-            'expected_cash' => $data['opening_cash'],
-            'status' => 'dibuka',
-        ]);
-
-        return back()->with('status', 'Shift kasir dibuka.');
+            return back()->with('status', 'Shift dibuka. Silakan bertransaksi.');
+        }, 3);
     }
 
-    /** Tutup shift: bandingkan uang fisik di laci dengan catatan sistem. */
-    public function closeShift(Request $request): RedirectResponse
+    public function closeShift(Request $request)
     {
-        $data = $request->validate([
-            'actual_cash' => ['required', 'numeric', 'min:0'],
-            'note' => ['nullable', 'string', 'max:255'],
-        ]);
+        $data = $request->validate(['actual_cash' => ['required', 'numeric', 'min:0', 'max:999999999999'], 'note' => ['nullable', 'string', 'max:255']]);
 
-        $shift = $request->user()->openShift();
+        return DB::transaction(function () use ($request, $data) {
+            $user = User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
+            $shift = CashierShift::where('user_id', $user->id)->where('status', 'dibuka')->lockForUpdate()->first();
+            if (! $shift) {
+                return back()->withErrors(['actual_cash' => 'Tidak ada shift terbuka.']);
+            }
+            $shift->update(['closed_at' => now(), 'actual_cash' => $data['actual_cash'],
+                'difference' => round($data['actual_cash'] - (float) $shift->expected_cash, 2), 'note' => $data['note'] ?? null, 'status' => 'ditutup']);
 
-        if (! $shift) {
-            return back()->withErrors(['actual_cash' => 'Tidak ada shift yang sedang dibuka.']);
-        }
-
-        $shift->update([
-            'closed_at' => now(),
-            'actual_cash' => $data['actual_cash'],
-            'difference' => round($data['actual_cash'] - (float) $shift->expected_cash, 2),
-            'status' => 'ditutup',
-            'note' => $data['note'] ?? null,
-        ]);
-
-        return back()->with('status', 'Shift kasir ditutup. Selisih: Rp '.number_format((float) $shift->fresh()->difference, 0, ',', '.'));
-    }
-
-    private function authorizeBranch(Request $request, int $branchId): void
-    {
-        $user = $request->user();
-
-        abort_if(! $user->isCentral() && $user->branch_id !== $branchId, 403, 'Transaksi ini bukan milik cabang Anda.');
+            return back()->with('status', 'Shift ditutup. Selisih kas: Rp '.number_format((float) $shift->difference, 0, ',', '.'));
+        }, 3);
     }
 }

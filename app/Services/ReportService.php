@@ -10,12 +10,11 @@ use App\Models\Stock;
 use App\Models\StockMovement;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 /**
  * HF-06 Dasbor & Pelaporan.
  * Semua laporan dapat difilter berdasarkan rentang tanggal dan cabang
- * ($branchId = null berarti seluruh cabang, hanya untuk pemilik & admin).
+ * (controller selalu membatasi data ke satu toko pengguna).
  */
 class ReportService
 {
@@ -115,7 +114,7 @@ class ReportService
         return Stock::query()
             ->with(['product:id,name,sku,unit,min_stock', 'branch:id,name,code'])
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
-            ->lowStock()
+            ->whereHas('product', fn ($q) => $q->active())->lowStock()
             ->orderBy('quantity')
             ->get();
     }
@@ -143,19 +142,6 @@ class ReportService
             ->whereDate('created_at', '<=', $to)
             ->orderBy('created_at')
             ->orderBy('id')
-            ->get();
-    }
-
-    /** Sisa lapisan FIFO (batch) sebuah barang: bukti urutan pemakaian persediaan. */
-    public function fifoLayers(int $productId, int $branchId): Collection
-    {
-        return DB::table('inventory_layers')
-            ->where('product_id', $productId)
-            ->where('branch_id', $branchId)
-            ->where('remaining_quantity', '>', 0)
-            ->orderBy('received_at')
-            ->orderBy('id')
-            ->select('id', 'unit_cost', 'quantity', 'remaining_quantity', 'received_at')
             ->get();
     }
 }
