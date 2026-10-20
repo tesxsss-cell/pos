@@ -62,4 +62,3 @@ class PosDemoSeeder extends Seeder
 }
 
 
-
