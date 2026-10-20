@@ -1,7 +1,125 @@
-name: Legacy workflow (manual only)
-on: workflow_dispatch
+name: Deploy Incremental via SSH ke Namecheap
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-pos-production
+  cancel-in-progress: false
+
 jobs:
-  information:
+  deploy:
+    name: Build, rsync, dan migrate
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
     steps:
-      - run: echo "Deployment otomatis lama dinonaktifkan. Baca README.md edisi online."
+      - name: Ambil source terbaru dari GitHub
+        uses: actions/checkout@v4
+
+      - name: Siapkan Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Instal dependensi frontend
+        run: npm ci
+
+      - name: Build Tailwind CSS dan JavaScript
+        run: npm run build
+
+      - name: Pastikan hasil build tersedia
+        run: test -f public/build/manifest.json
+
+      - name: Hapus penanda Vite development
+        run: rm -f public/hot
+
+      # Mengganti FTPS dengan rsync via SSH (bebas error FIN packet / FTP timeout)
+      - name: Sinkronisasi file via rsync (Password SSH)
+        run: |
+          sudo apt-get update && sudo apt-get install -y sshpass
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" rsync -avz --delete \
+            -e "ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT || '21098' }}" \
+            --exclude='/.git/' \
+            --exclude='/.github/' \
+            --exclude='*.log' \
+            --exclude='.DS_Store' \
+            --exclude='.env*' \
+            --exclude='.phpactor.json' \
+            --exclude='.phpunit.result.cache' \
+            --exclude='.codex/' \
+            --exclude='.cursor/' \
+            --exclude='.idea/' \
+            --exclude='.nova/' \
+            --exclude='.phpunit.cache/' \
+            --exclude='.vscode/' \
+            --exclude='.zed/' \
+            --exclude='auth.json' \
+            --exclude='/node_modules/' \
+            --exclude='/vendor/' \
+            --exclude='_ide_helper.php' \
+            --exclude='/public/fonts-manifest.dev.json' \
+            --exclude='/public/hot' \
+            --exclude='/public/storage' \
+            --exclude='/storage/*.key' \
+            --exclude='/storage/pail/' \
+            --exclude='/storage/logs/' \
+            --exclude='/storage/framework/cache/' \
+            --exclude='/storage/framework/sessions/' \
+            --exclude='/storage/framework/views/' \
+            --exclude='/storage/app/' \
+            --exclude='/bootstrap/cache/' \
+            --exclude='Homestead.json' \
+            --exclude='Homestead.yaml' \
+            --exclude='Thumbs.db' \
+            --exclude='/tests/' \
+            ./ ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_APP_PATH || '/home/clouyogf/public_html/pos' }}
+
+      - name: Periksa dan jalankan migration pending
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT || '21098' }}
+          command_timeout: 10m
+          script: |
+            set -e
+
+            APP_DIR="${{ secrets.SSH_APP_PATH }}"
+
+            if [ -z "$APP_DIR" ]; then
+              for CANDIDATE in "$HOME/public_html/pos" "$HOME/public_html"; do
+                if [ -f "$CANDIDATE/artisan" ]; then
+                  APP_DIR="$CANDIDATE"
+                  break
+                fi
+              done
+            fi
+
+            if [ -z "$APP_DIR" ]; then
+              ARTISAN_FILE="$(find "$HOME/public_html" -maxdepth 4 -type f -name artisan -print -quit 2>/dev/null || true)"
+              if [ -n "$ARTISAN_FILE" ]; then
+                APP_DIR="$(dirname "$ARTISAN_FILE")"
+              fi
+            fi
+
+            if [ -z "$APP_DIR" ] || [ ! -f "$APP_DIR/artisan" ]; then
+              echo "ERROR: Folder aplikasi Laravel tidak ditemukan."
+              echo "Isi GitHub Secret SSH_APP_PATH dengan path folder yang berisi file artisan."
+              echo "Contoh: /home/clouyogf/public_html/pos"
+              exit 1
+            fi
+
+            echo "Aplikasi Laravel ditemukan di: $APP_DIR"
+            cd "$APP_DIR"
+
+            php artisan migrate --force --no-interaction
+            php artisan optimize:clear

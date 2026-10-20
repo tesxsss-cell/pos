@@ -60,3 +60,4 @@ class AuthController extends Controller
         return $role === 'kasir' ? route('pos.index') : route('dashboard');
     }
 }
+
