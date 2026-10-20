@@ -23,16 +23,6 @@ jobs:
       - name: Ambil source terbaru dari GitHub
         uses: actions/checkout@v4
 
-      # Mendeteksi apakah ada perubahan pada folder migrations atau seeders
-      - name: Cek perubahan file Database (Migration / Seeder)
-        id: db_changes
-        uses: dorny/paths-filter@v3
-        with:
-          filters:
-            db:
-              - 'database/migrations/**'
-              - 'database/seeders/**'
-
       - name: Siapkan Node.js
         uses: actions/setup-node@v4
         with:
@@ -51,8 +41,7 @@ jobs:
       - name: Hapus penanda Vite development
         run: rm -f public/hot
 
-      # Sinkronisasi file via rsync (Password SSH)
-      - name: Sinkronisasi file via rsync
+      - name: Sinkronisasi file via rsync (Password SSH)
         run: |
           sudo apt-get update && sudo apt-get install -y sshpass
           sshpass -p "${{ secrets.SSH_PASSWORD }}" rsync -avz --delete \
@@ -92,16 +81,13 @@ jobs:
             --exclude='/tests/' \
             ./ ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_APP_PATH || '/home/clouyogf/public_html/pos' }}
 
-      - name: Jalankan Perintah di Server via SSH
+      - name: Periksa dan jalankan migration pending
         uses: appleboy/ssh-action@v1.2.2
-        env:
-          DB_CHANGED: ${{ steps.db_changes.outputs.db }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
           port: ${{ secrets.SSH_PORT || '21098' }}
-          envs: DB_CHANGED
           command_timeout: 10m
           script: |
             set -e
@@ -133,21 +119,13 @@ jobs:
             echo "Aplikasi Laravel ditemukan di: $APP_DIR"
             cd "$APP_DIR"
 
-            # 1. Bersihkan cache konfigurasi lama
+            # 1. Bersihkan cache konfigurasi lama agar schema baru terdeteksi
             php artisan optimize:clear
 
-            # 2. Cek apakah ada perubahan file migration atau seeder
-            if [ "$DB_CHANGED" = "true" ]; then
-              echo ">> Terdeteksi perubahan migration/seeder: Menjalankan migrate:fresh --seed..."
-              php artisan migrate:fresh --seed --force --no-interaction
-            else
-              echo ">> Tidak ada perubahan skema database: Menjalankan migrate biasa..."
-              php artisan migrate --force --no-interaction
-            fi
+            # 2. Jalankan migrasi database
+            php artisan migrate --force --no-interaction
 
-            # 3. Cache konfigurasi, route, dan view untuk optimasi produksi
+            # 3. Cache konfigurasi, route, dan view untuk performa produksi
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
-
-            echo ">> Deployment selesai sukses!"
