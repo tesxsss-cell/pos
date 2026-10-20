@@ -22,6 +22,16 @@ jobs:
     steps:
       - name: Ambil source terbaru dari GitHub
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Deteksi perubahan file migration dan seeder
+        id: changed_db_files
+        uses: tj-actions/changed-files@v45
+        with:
+          files: |
+            database/migrations/**
+            database/seeders/**
 
       - name: Siapkan Node.js
         uses: actions/setup-node@v4
@@ -81,7 +91,7 @@ jobs:
             --exclude='/tests/' \
             ./ ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_APP_PATH || '/home/clouyogf/public_html/pos' }}
 
-      - name: Periksa dan jalankan migration pending
+      - name: Periksa dan jalankan migration
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -119,11 +129,19 @@ jobs:
             echo "Aplikasi Laravel ditemukan di: $APP_DIR"
             cd "$APP_DIR"
 
-            # 1. Bersihkan cache konfigurasi lama agar schema baru terdeteksi
+            # 1. Bersihkan cache konfigurasi lama
             php artisan optimize:clear
 
-            # 2. Jalankan migrasi database
-            php artisan migrate --force --no-interaction
+            # 2. Percabangan eksekusi migration
+            HAS_DB_CHANGES="${{ steps.changed_db_files.outputs.any_changed }}"
+
+            if [ "$HAS_DB_CHANGES" = "true" ]; then
+              echo "Perubahan schema/seeder terdeteksi. Menjalankan migrate:fresh --seed..."
+              php artisan migrate:fresh --seed --force --no-interaction
+            else
+              echo "Tidak ada perubahan schema/seeder. Menjalankan migrate standar..."
+              php artisan migrate --force --no-interaction
+            fi
 
             # 3. Cache konfigurasi, route, dan view untuk performa produksi
             php artisan config:cache
