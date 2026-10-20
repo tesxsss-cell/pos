@@ -60,3 +60,4 @@ class PosDemoSeeder extends Seeder
         $this->command?->info('Demo: pengelola@pos.test, kasir1@pos.test, kasir2@pos.test | Sandi: DemoKopdes2026! (ganti sebelum digunakan).');
     }
 }
+

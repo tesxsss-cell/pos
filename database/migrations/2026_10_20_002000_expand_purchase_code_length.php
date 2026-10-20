@@ -21,3 +21,4 @@ return new class extends Migration
         // tersimpan tidak boleh terpotong atau membuat rollback gagal.
     }
 };
+
