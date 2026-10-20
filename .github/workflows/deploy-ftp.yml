@@ -41,7 +41,6 @@ jobs:
       - name: Hapus penanda Vite development
         run: rm -f public/hot
 
-      # Mengganti FTPS dengan rsync via SSH (bebas error FIN packet / FTP timeout)
       - name: Sinkronisasi file via rsync (Password SSH)
         run: |
           sudo apt-get update && sudo apt-get install -y sshpass
@@ -114,12 +113,19 @@ jobs:
             if [ -z "$APP_DIR" ] || [ ! -f "$APP_DIR/artisan" ]; then
               echo "ERROR: Folder aplikasi Laravel tidak ditemukan."
               echo "Isi GitHub Secret SSH_APP_PATH dengan path folder yang berisi file artisan."
-              echo "Contoh: /home/clouyogf/public_html/pos"
               exit 1
             fi
 
             echo "Aplikasi Laravel ditemukan di: $APP_DIR"
             cd "$APP_DIR"
 
-            php artisan migrate --force --no-interaction
+            # 1. Bersihkan cache konfigurasi lama agar schema baru terdeteksi
             php artisan optimize:clear
+
+            # 2. Jalankan migrasi database
+            php artisan migrate --force --no-interaction
+
+            # 3. Cache konfigurasi, route, dan view untuk performa produksi
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
