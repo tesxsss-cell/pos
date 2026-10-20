@@ -8,9 +8,23 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (Schema::hasColumn('stock_transfers', 'stock_request_id')) {
-            Schema::table('stock_transfers', fn (Blueprint $table) => $table->dropConstrainedForeignId('stock_request_id'));
+        if (Schema::hasTable('stock_transfers') && Schema::hasColumn('stock_transfers', 'stock_request_id')) {
+            // Kolom bisa ada tanpa FK, atau FK menggunakan nama non-default.
+            // Baca constraint aktual; jangan menebak namanya dari nama kolom.
+            foreach (Schema::getForeignKeys('stock_transfers') as $foreignKey) {
+                if (in_array('stock_request_id', $foreignKey['columns'], true)) {
+                    Schema::table('stock_transfers', function (Blueprint $table) use ($foreignKey) {
+                        $table->dropForeign($foreignKey['name'] ?? $foreignKey['columns']);
+                    });
+                }
+            }
+
+            Schema::table('stock_transfers', function (Blueprint $table) {
+                $table->dropColumn('stock_request_id');
+            });
         }
+
+        // Penghapusan modul lama sesuai migrasi aslinya. Backup sebelum migrate.
         Schema::dropIfExists('stock_request_items');
         Schema::dropIfExists('stock_requests');
     }
