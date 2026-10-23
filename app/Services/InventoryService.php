@@ -71,14 +71,6 @@ class InventoryService
         });
     }
 
-    /** Pembatalan memakai harga pokok asli baris penjualan, bukan harga saat pembatalan. */
-    public function restore(Model $consumer, StockMovementType $type = StockMovementType::PembatalanPenjualan, ?int $userId = null, ?string $note = null): float
-    {
-        $this->receive($consumer->product_id, $consumer->sale->branch_id, $consumer->quantity,
-            (float) $consumer->unit_cost, $consumer, $type, userId: $userId, note: $note);
-
-        return (float) $consumer->cogs_total;
-    }
 
     public function availableQuantity(int $productId, int $branchId): int
     {

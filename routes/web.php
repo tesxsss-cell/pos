@@ -32,7 +32,6 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('penjualan/{sale}/struk', [PosController::class, 'receipt'])->name('pos.receipt');
     Route::middleware('role:pengelola')->group(function () {
         Route::get('penjualan', [PosController::class, 'sales'])->name('sales.index');
-        Route::post('penjualan/{sale}/batal', [PosController::class, 'void'])->name('pos.void');
         Route::resource('barang', ProductController::class)->parameters(['barang' => 'product'])->names('products')->except('show');
         Route::resource('kategori', CategoryController::class)->parameters(['kategori' => 'category'])->names('categories')->except('show');
         Route::resource('pemasok', SupplierController::class)->parameters(['pemasok' => 'supplier'])->names('suppliers')->except('show');

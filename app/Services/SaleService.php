@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Enums\PaymentMethod;
 use App\Enums\SaleStatus;
-use App\Enums\StockMovementType;
 use App\Models\CashierShift;
 use App\Models\Product;
 use App\Models\Sale;
@@ -90,35 +89,4 @@ class SaleService
         }, 3);
     }
 
-    public function void(Sale $sale, int $userId, ?string $reason = null): Sale
-    {
-        if (! User::findOrFail($userId)->isPengelola()) {
-            throw new RuntimeException('Hanya Pengelola dapat membatalkan transaksi.');
-        }
-        if (blank($reason)) {
-            throw new RuntimeException('Alasan pembatalan wajib diisi.');
-        }
-
-        return DB::transaction(function () use ($sale, $userId, $reason) {
-            // Kunci kasir -> shift -> penjualan -> stok, sama dengan urutan checkout/tutup shift.
-            User::whereKey($sale->user_id)->lockForUpdate()->firstOrFail();
-            $shift = CashierShift::whereKey($sale->cashier_shift_id)->lockForUpdate()->first();
-            $sale = Sale::whereKey($sale->id)->lockForUpdate()->firstOrFail();
-            if (! $sale->isCompleted()) {
-                throw new RuntimeException('Transaksi sudah dibatalkan.');
-            }
-            if (! $shift || ! $shift->isOpen()) {
-                throw new RuntimeException('Shift sudah ditutup. Pembatalan lintas shift tidak didukung; jangan mengubah rekap kas yang sudah ditutup.');
-            }
-            foreach ($sale->items()->orderBy('product_id')->get() as $item) {
-                $this->inventory->restore($item, StockMovementType::PembatalanPenjualan, $userId, 'Pembatalan '.$sale->invoice_no.': '.$reason);
-            }
-            if ($sale->payment_method === PaymentMethod::Tunai) {
-                $shift->decrement('expected_cash', (float) $sale->total);
-            }
-            $sale->update(['status' => SaleStatus::Dibatalkan, 'voided_by' => $userId, 'voided_at' => now(), 'void_reason' => $reason]);
-
-            return $sale->fresh('items');
-        }, 3);
-    }
 }

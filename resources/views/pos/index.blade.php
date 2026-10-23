@@ -80,7 +80,7 @@
                         <div class="panel-heading">
                             <div>
                                 <h3>Pembayaran</h3>
-                                <p>Pastikan nominal sudah sesuai.</p>
+                                <p>Periksa barang dan nominal. Transaksi tersimpan tidak dapat dibatalkan.</p>
                             </div><x-icon name="calculator" />
                         </div>
                         <form id="checkout-form" class="space-y-3">
@@ -120,7 +120,7 @@
                                 id="shift-expected">Rp {{ number_format((float) $shift->expected_cash, 0, ',', '.') }}</span>
                         </p>
                         <a href="{{ route('pos.index') }}" class="text-sm text-brand-700 underline"
-                            id="refresh-shift">Segarkan jika ada pembatalan oleh Pengelola</a>
+                            id="refresh-shift">Segarkan data shift</a>
                         <form id="close-shift-form" method="POST" action="{{ route('pos.shift.close') }}"
                             class="mt-3 space-y-3">@csrf
                             <label class="block">Kas fisik saat tutup (Rp)<input name="actual_cash" class="field"
@@ -129,8 +129,8 @@
                                     maxlength="255"></label><button class="btn-secondary w-full"><x-icon
                                     name="clock" /> Tutup shift</button>
                         </form>
-                        <p class="mt-3 text-xs text-slate-500">Setiap akun memakai laci kas terpisah. Pembatalan harus
-                            diselesaikan Pengelola sebelum shift ditutup.</p>
+                        <p class="mt-3 text-xs text-slate-500">Setiap akun memakai laci kas terpisah. Pastikan seluruh
+                            transaksi sudah dikonfirmasi server sebelum shift ditutup.</p>
                     </section>
                 </aside>
             </div>

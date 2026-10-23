@@ -4,7 +4,8 @@
     <section class="page-heading">
         <div><span class="eyebrow">RUANG KASIR</span>
             <h2>Riwayat transaksi saya</h2>
-            <p>Hanya transaksi milik akun Anda di toko ini. Pembatalan tetap ditangani Pengelola.</p>
+            <p>Hanya transaksi milik akun Anda di toko ini. Transaksi tersimpan hanya dapat dilihat dan dicetak, tidak dapat
+                dibatalkan melalui aplikasi.</p>
         </div><a class="btn-secondary" href="{{ route('pos.index') }}">Ke kasir</a>
     </section>
     <form method="GET" action="{{ route('pos.history') }}" class="panel cashier-history-filter"><label>Dari tanggal<input
@@ -13,7 +14,7 @@
                 name="status" class="field">
                 <option value="">Semua status</option>
                 <option value="selesai" @selected($status === 'selesai')>Selesai</option>
-                <option value="dibatalkan" @selected($status === 'dibatalkan')>Dibatalkan</option>
+                <option value="dibatalkan" @selected($status === 'dibatalkan')>Dibatalkan (data lama)</option>
             </select></label><button class="btn-primary">Tampilkan</button><a href="{{ route('pos.history') }}"
             class="text-link">Reset</a></form>
     <section class="panel cashier-history-panel">

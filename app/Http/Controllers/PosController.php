@@ -148,19 +148,6 @@ class PosController extends Controller
             ->between($from, $to)->with(['cashier', 'shift'])->latest('id')->paginate(10)->withQueryString()]);
     }
 
-    public function void(Request $request, Sale $sale)
-    {
-        abort_unless($request->user()->isPengelola(), 403);
-        abort_if($sale->branch_id !== $request->user()->branch_id, 403);
-        $data = $request->validate(['reason' => ['required', 'string', 'max:255'], 'confirm_return' => ['accepted']]);
-        try {
-            $this->sales->void($sale, $request->user()->id, $data['reason']);
-        } catch (RuntimeException $e) {
-            return back()->withErrors(['reason' => $e->getMessage()]);
-        }
-
-        return back()->with('status', 'Penjualan dibatalkan. Stok dan kas sistem sudah dikoreksi; riwayat tetap ada.');
-    }
 
     public function openShift(Request $request)
     {
