@@ -5,24 +5,26 @@
 @section('content')
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h1 class="text-lg font-semibold text-slate-900">Data Barang</h1>
-        <a href="{{ route('products.create') }}" class="rounded-md bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-medium text-white">Tambah barang</a>
+        <a href="{{ route('products.create') }}"
+            class="rounded-md bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-medium text-white">Tambah barang</a>
     </div>
 
     <form method="GET" class="mb-4 flex flex-wrap items-end gap-3 rounded-xl bg-white p-4 shadow">
         <div>
             <label class="block text-xs font-medium text-slate-500" for="field-1">Cari nama / SKU / barcode</label>
-<input id="field-1" name="q" value="{{ request('q') }}" class="mt-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm">
+            <input id="field-1" name="q" value="{{ request('q') }}"
+                class="mt-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm">
         </div>
         <div>
             <label class="block text-xs font-medium text-slate-500" for="field-2">Kategori</label>
-<select id="field-2" name="kategori" class="mt-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm">
+            <select id="field-2" name="kategori" class="mt-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm">
                 <option value="">Semua kategori</option>
                 @foreach ($categories as $category)
                     <option value="{{ $category->id }}" @selected(request('kategori') == $category->id)>{{ $category->name }}</option>
                 @endforeach
             </select>
         </div>
-        
+
         <button class="rounded-md bg-brand-700 hover:bg-brand-800 px-4 py-2 text-sm font-medium text-white">Filter</button>
     </form>
 
@@ -49,18 +51,21 @@
                         </td>
                         <td class="px-4 py-3">{{ $product->name }}</td>
                         <td class="px-4 py-3">{{ $product->category->name ?? '-' }}</td>
-                        <td class="px-4 py-3 text-right">Rp {{ number_format((float) $product->sell_price, 0, ',', '.') }}</td>
+                        <td class="px-4 py-3 text-right">Rp {{ number_format((float) $product->sell_price, 0, ',', '.') }}
+                        </td>
                         <td class="px-4 py-3 text-right">
-                            <span class="{{ $stok <= $product->min_stock ? 'rounded bg-red-100 px-2 py-0.5 font-medium text-red-700' : '' }}">
+                            <span
+                                class="{{ $stok <= $product->min_stock ? 'rounded bg-red-100 px-2 py-0.5 font-medium text-red-700' : '' }}">
                                 {{ $stok }} {{ $product->unit }}
                             </span>
                         </td>
                         <td class="px-4 py-3 text-right">{{ $product->min_stock }}</td>
                         <td class="px-4 py-3 text-right">
                             <div class="flex items-center justify-end gap-2">
-                                <a href="{{ route('products.edit', $product) }}" class="text-slate-700 hover:underline">Ubah</a>
+                                <a href="{{ route('products.edit', $product) }}"
+                                    class="text-slate-700 hover:underline">Ubah</a>
                                 <form method="POST" action="{{ route('products.destroy', $product) }}"
-                                      onsubmit="return confirm('Arsipkan barang ini?')">
+                                    onsubmit="return confirm('Arsipkan barang ini?')">
                                     @csrf
                                     @method('DELETE')
                                     <button class="text-red-600 hover:underline">Arsip</button>
@@ -69,7 +74,9 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" class="px-4 py-6 text-center text-slate-400">Belum ada data barang.</td></tr>
+                    <tr>
+                        <td colspan="7" class="px-4 py-6 text-center text-slate-400">Belum ada data barang.</td>
+                    </tr>
                 @endforelse
             </tbody>
         </table>
